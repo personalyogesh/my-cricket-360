@@ -1,0 +1,31 @@
+name: MyCricket360
+options:
+  bundleIdPrefix: org.mycricket360
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+targets:
+  MyCricket360:
+    type: application
+    platform: iOS
+    sources:
+      - path: MyCricket360/MyCricket360
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.mycricket360.app
+        INFOPLIST_KEY_CFBundleDisplayName: My Cricket 360
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+    info:
+      path: MyCricket360/MyCricket360/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: My Cricket 360
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight

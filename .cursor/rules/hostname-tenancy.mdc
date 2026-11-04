@@ -1,0 +1,15 @@
+---
+description: Hostname-based club tenancy for apps/web
+globs:
+  - apps/web/**
+---
+
+# Web hostname tenancy
+
+- Resolve club via `resolveClubFromHost()` / allowlist in `apps/web/src/lib/clubs/`.
+- Use `apps/web/src/proxy.ts` (Next.js Proxy) to forward allowlisted host context headers.
+- Normalize host: lowercase, strip port; map www and apex to the same slug.
+- Unknown hosts → platform fallback or 404 — never another club’s `organizationId`.
+- Public data fetching must use the resolved club’s org id/slug from the allowlist, not request body/query club ids alone.
+- `generateMetadata` and canonical links use the club’s `primaryDomain`.
+- Admin routes still require JWT + org membership; hostname only scopes UX.

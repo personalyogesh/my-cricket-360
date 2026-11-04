@@ -1,0 +1,54 @@
+openapi: 3.1.0
+info:
+  title: My Cricket 360 API
+  version: 0.1.0
+  description: >
+    Organization-scoped cricket management API.
+    Founding clubs: Starks Cricket, CGI Steelers Cricket.
+servers:
+  - url: http://127.0.0.1:8400
+    description: Local
+paths:
+  /health:
+    get:
+      operationId: health
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+  /v1/orgs:
+    get:
+      operationId: listOrganizations
+      summary: List founding organizations
+      responses:
+        "200":
+          description: Organization list
+  /v1/orgs/{slug}:
+    get:
+      operationId: getOrganization
+      summary: Get organization by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [starks, steelers]
+      responses:
+        "200":
+          description: Organization
+        "404":
+          description: Not found
+  /v1/resolve-host:
+    get:
+      operationId: resolveHost
+      summary: Resolve allowlisted hostname to organization
+      parameters:
+        - name: host
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Resolution result (club | platform | unknown)

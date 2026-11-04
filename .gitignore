@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.uv/
+apps/api/.venv/
+
+# Build / Next
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.staging.example
+!.env.production.example
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# iOS
+apps/ios/*.xcodeproj/
+apps/ios/*.xcworkspace/
+apps/ios/**/DerivedData/
+apps/ios/**/*.xcuserstate
+apps/ios/MyCricket360.xcodeproj/
+
+# Coverage / logs
+coverage/
+*.log
+.turbo/
+
+# Misc
+tmp-web-scaffold/
+*.pem

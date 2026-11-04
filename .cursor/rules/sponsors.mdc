@@ -1,0 +1,15 @@
+---
+description: Sponsor feature conventions
+globs:
+  - "**/sponsor*/**"
+  - "**/sponsors/**"
+---
+
+# Sponsors
+
+- Sponsors are org-scoped; seed Hashtag India Cary (Starks) and CGI (Steelers).
+- Status workflow: `draft` → `pending_approval` → `approved` | `rejected` | `archived`.
+- Public pages and iOS only show `approved` sponsors (and active campaigns).
+- Uploads go to Storage under `{organization_id}/{sponsor_id}/...` with admin approval.
+- Record `sponsor_impression` / `sponsor_click` analytics events with `organization_id` and source (`web` | `ios`).
+- Shareable path: `/sponsors/[slug]` on the club hostname.

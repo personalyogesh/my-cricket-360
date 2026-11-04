@@ -1,0 +1,37 @@
+---
+description: My Cricket 360 monorepo — architecture, tenancy, and safety invariants
+alwaysApply: true
+---
+
+# My Cricket 360
+
+Multi-club cricket platform: one Next.js web app, one FastAPI API, one SwiftUI iOS app, one PostgreSQL (Supabase).
+
+## Founding clubs
+
+- **Starks Cricket** — `starksgroup.org` / `www` — sponsor Hashtag India Cary — slug `starks`
+- **CGI Steelers Cricket** — `cgisteelerscricket.org` / `www` — sponsor CGI — slug `steelers`
+
+## Hard rules
+
+1. **Hostname allowlist only** for web club resolution. Never trust an unvalidated `Host` header or client `?club=` for authz or private data.
+2. **Organization isolation** — every tenant query filters by `organization_id`. No cross-club leakage in HTML, API, SEO, or storage paths.
+3. **Server-side authz** — iOS/web UI is advisory; FastAPI enforces membership + role.
+4. **Do not** change DNS, deploy to production, or modify/delete existing Firebase projects without explicit human approval.
+5. **Do not** activate paid billing or third-party club onboarding yet; keep entitlement hooks only.
+6. Prefer **sponsor** vertical and founding-club readiness when prioritizing work.
+7. **Do not mark features complete without verification** (tests or documented manual proof).
+
+## Layout
+
+- `apps/web` — Next.js App Router, TypeScript, Tailwind
+- `apps/api` — FastAPI, SQLAlchemy 2, Alembic
+- `apps/ios` — SwiftUI My Cricket 360
+- `packages/openapi` — API contracts
+
+## When adding a club-facing feature
+
+- Reuse shared components; vary theme/data via `ClubConfig` / org scope.
+- Support apex + www (+ local `*.localhost`) hostnames.
+- Set canonical URLs to the club primary domain.
+- Add or update tests for host resolution and org scoping.

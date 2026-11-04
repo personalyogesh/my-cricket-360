@@ -1,0 +1,19 @@
+{
+  "name": "my-cricket-360",
+  "private": true,
+  "version": "0.1.0",
+  "description": "My Cricket 360 monorepo — web, API, and iOS",
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w @my-cricket-360/web",
+    "test:web": "npm run test -w @my-cricket-360/web",
+    "lint:web": "npm run lint -w @my-cricket-360/web",
+    "build:web": "npm run build -w @my-cricket-360/web",
+    "test": "npm run test:web"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
