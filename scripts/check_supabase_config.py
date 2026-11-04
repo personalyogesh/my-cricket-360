@@ -112,6 +112,8 @@ def main() -> int:
         missing.append("SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY")
     if settings.database_url.startswith("sqlite"):
         missing.append("MC360_DATABASE_URL (Postgres from Supabase Settings → Database)")
+    elif "REPLACE_WITH_DB_PASSWORD" in settings.database_url or "[YOUR-PASSWORD]" in settings.database_url:
+        missing.append("MC360_DATABASE_URL password (replace placeholder from Settings → Database)")
 
     if settings.database_name_hint == "mycricket360":
         errors.append(
