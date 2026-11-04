@@ -36,6 +36,12 @@ export default async function AdminPage() {
           >
             Memberships
           </Link>
+          <Link
+            href="/admin/fixtures"
+            className="rounded border border-[var(--club-primary)] px-4 py-2.5"
+          >
+            Fixtures
+          </Link>
         </div>
         <p className="mt-6 text-sm opacity-70">
           Organization id:{" "}

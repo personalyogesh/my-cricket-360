@@ -60,6 +60,8 @@ class Organization(Base, TimestampMixin):
     memberships: Mapped[list[Membership]] = relationship(back_populates="organization")
     teams: Mapped[list[Team]] = relationship(back_populates="organization")
     sponsors: Mapped[list[Sponsor]] = relationship(back_populates="organization")
+    schedules: Mapped[list[Schedule]] = relationship(back_populates="organization")
+    fixtures: Mapped[list[Fixture]] = relationship(back_populates="organization")
 
 
 class OrganizationDomain(Base, TimestampMixin):
@@ -239,6 +241,101 @@ class SponsorCampaign(Base, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     sponsor: Mapped[Sponsor] = relationship(back_populates="campaigns")
+
+
+FIXTURE_STATUSES = (
+    "draft",
+    "scheduled",
+    "postponed",
+    "cancelled",
+    "live",
+    "completed",
+)
+PUBLIC_FIXTURE_STATUSES = (
+    "scheduled",
+    "postponed",
+    "cancelled",
+    "live",
+    "completed",
+)
+SCHEDULE_STATUSES = ("draft", "published")
+
+
+class Schedule(Base, TimestampMixin):
+    __tablename__ = "schedules"
+    __table_args__ = (
+        Index("ix_schedules_org_status", "organization_id", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    season: Mapped[str] = mapped_column(String(64), nullable=False)
+    competition: Mapped[str] = mapped_column(String(128), nullable=False)
+    format_code: Mapped[str] = mapped_column(String(32), nullable=False)
+    format_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    overs: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    timezone: Mapped[str] = mapped_column(String(64), nullable=False)
+    # draft schedules stay off the public site; published ones are readable.
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
+
+    organization: Mapped[Organization] = relationship(back_populates="schedules")
+    fixtures: Mapped[list[Fixture]] = relationship(back_populates="schedule")
+
+
+class Fixture(Base, TimestampMixin):
+    __tablename__ = "fixtures"
+    __table_args__ = (
+        Index("ix_fixtures_org_starts", "organization_id", "starts_at"),
+        Index("ix_fixtures_org_status", "organization_id", "status"),
+        Index("ix_fixtures_org_format", "organization_id", "format_code"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    schedule_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("schedules.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    season: Mapped[str] = mapped_column(String(64), nullable=False)
+    competition: Mapped[str] = mapped_column(String(128), nullable=False)
+    home_team_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("teams.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    away_team_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("teams.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    home_team_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    away_team_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    venue: Mapped[str] = mapped_column(String(255), nullable=False)
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    timezone: Mapped[str] = mapped_column(String(64), nullable=False)
+    format_code: Mapped[str] = mapped_column(String(32), nullable=False)
+    format_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    overs: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
+    # Admin-entered only. Never generated from an external score provider.
+    result_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    organization: Mapped[Organization] = relationship(back_populates="fixtures")
+    schedule: Mapped[Schedule | None] = relationship(back_populates="fixtures")
 
 
 class AuditLog(Base, TimestampMixin):

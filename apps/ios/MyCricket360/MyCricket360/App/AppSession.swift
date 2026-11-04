@@ -12,6 +12,9 @@ final class AppSession: ObservableObject {
     @Published var selectedClub: ClubSlug?
     @Published var sponsors: [SponsorDTO] = []
     @Published var teams: [TeamDTO] = []
+    @Published var fixtures: [FixtureDTO] = []
+    @Published var fixturesLoading: Bool = false
+    @Published var fixturesError: String?
     @Published var statusMessage: String?
     @Published var isLoading: Bool = false
 
@@ -94,6 +97,8 @@ final class AppSession: ObservableObject {
         memberships = []
         sponsors = []
         teams = []
+        fixtures = []
+        fixturesError = nil
         accessToken = nil
         AuthTokenStore.clear()
     }
@@ -103,6 +108,8 @@ final class AppSession: ObservableObject {
         if selectedClub != club {
             sponsors = []
             teams = []
+            fixtures = []
+            fixturesError = nil
         }
         selectedClub = club
         persistLastClub()
@@ -141,6 +148,8 @@ final class AppSession: ObservableObject {
             if let selectedClub, !approvedClubs.contains(selectedClub) {
                 sponsors = []
                 teams = []
+                fixtures = []
+                fixturesError = nil
                 self.selectedClub = approvedClubs.first
             } else if selectedClub == nil {
                 selectedClub = approvedClubs.first
@@ -162,6 +171,7 @@ final class AppSession: ObservableObject {
     func loadClubContent() async {
         await loadSponsors()
         await loadTeams()
+        await loadFixtures()
     }
 
     func loadSponsors() async {
@@ -187,6 +197,28 @@ final class AppSession: ObservableObject {
         } catch {
             teams = []
             statusMessage = error.localizedDescription
+        }
+    }
+
+    func loadFixtures(formatCode: String? = nil) async {
+        guard let selectedClub else {
+            fixtures = []
+            fixturesError = nil
+            return
+        }
+        fixturesLoading = true
+        fixturesError = nil
+        defer { fixturesLoading = false }
+        do {
+            let page = try await APIClient.shared.publicFixtures(
+                slug: selectedClub.rawValue,
+                when: "upcoming",
+                formatCode: formatCode
+            )
+            fixtures = page.items
+        } catch {
+            fixtures = []
+            fixturesError = error.localizedDescription
         }
     }
 
@@ -232,7 +264,8 @@ extension AppSession {
         club: ClubSlug?,
         memberships: [ClubMembership] = [],
         sponsors: [SponsorDTO] = [],
-        teams: [TeamDTO] = []
+        teams: [TeamDTO] = [],
+        fixtures: [FixtureDTO] = []
     ) -> AppSession {
         let session = AppSession()
         session.isSignedIn = true
@@ -246,6 +279,7 @@ extension AppSession {
         session.selectedClub = club
         session.sponsors = sponsors
         session.teams = teams
+        session.fixtures = fixtures
         return session
     }
 }

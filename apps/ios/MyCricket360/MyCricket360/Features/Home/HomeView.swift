@@ -13,6 +13,22 @@ struct HomeView: View {
                         Text("Domain \(club.primaryDomain)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                        GroupBox("Next fixture") {
+                            if let fixture = session.fixtures.first {
+                                Text("\(fixture.home_team_name) vs \(fixture.away_team_name)")
+                                Text(fixture.format_name)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                if let result = fixture.result_summary {
+                                    Text(result)
+                                        .font(.footnote)
+                                }
+                            } else {
+                                Text("No upcoming fixtures yet.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                         GroupBox("Teams") {
                             if session.teams.isEmpty {
                                 Text("No public teams yet.")

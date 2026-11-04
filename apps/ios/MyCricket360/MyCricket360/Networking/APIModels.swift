@@ -59,6 +59,44 @@ struct DevTokenResponseDTO: Codable {
     let note: String
 }
 
+struct FixtureDTO: Codable, Identifiable {
+    let id: UUID
+    let schedule_id: UUID?
+    let season: String
+    let competition: String
+    let home_team_id: UUID?
+    let away_team_id: UUID?
+    let home_team_name: String
+    let away_team_name: String
+    let venue: String
+    let starts_at: String
+    let timezone: String
+    let format_code: String
+    let format_name: String
+    let overs: Int?
+    let status: String
+    let result_summary: String?
+}
+
+struct FixturePageDTO: Codable {
+    let items: [FixtureDTO]
+    let total: Int
+    let limit: Int
+    let offset: Int
+}
+
+struct ScheduleDTO: Codable, Identifiable {
+    let id: UUID
+    let name: String
+    let season: String
+    let competition: String
+    let format_code: String
+    let format_name: String
+    let overs: Int?
+    let timezone: String
+    let status: String
+}
+
 struct MembershipRequestDTO: Codable {
     let organization_slug: String
     let role: String
