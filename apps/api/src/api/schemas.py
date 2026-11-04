@@ -61,6 +61,12 @@ class ProfileOut(BaseModel):
     email: str | None = None
     display_name: str
     avatar_url: str | None = None
+    phone: str | None = None
+
+
+class ProfileUpdateIn(BaseModel):
+    display_name: str | None = Field(default=None, min_length=1, max_length=255)
+    phone: str | None = Field(default=None, max_length=64)
 
 
 class MembershipOut(BaseModel):
@@ -88,8 +94,17 @@ class MembershipRequestIn(BaseModel):
 
 
 class MembershipDecisionIn(BaseModel):
-    decision: Literal["approved", "rejected"]
+    decision: Literal["approved", "rejected", "suspended"]
     role: Literal["member", "admin"] | None = None
+
+
+class TeamPublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    division: str | None = None
+    season: str | None = None
 
 
 class SponsorCreateIn(BaseModel):

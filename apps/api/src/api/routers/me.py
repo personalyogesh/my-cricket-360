@@ -15,6 +15,7 @@ from api.schemas import (
     MembershipRequestIn,
     MeResponse,
     ProfileOut,
+    ProfileUpdateIn,
 )
 from api.services import membership_to_out, write_audit
 
@@ -27,6 +28,7 @@ def _profile_out(profile: Profile) -> ProfileOut:
         email=profile.email,
         display_name=profile.display_name,
         avatar_url=profile.avatar_url,
+        phone=profile.phone,
     )
 
 
@@ -51,6 +53,34 @@ def get_me(
     memberships = _load_memberships(db, user.id)
     approved = [m for m in memberships if m.status == "approved"]
     return MeResponse(user=_profile_out(profile), memberships=memberships, approved_clubs=approved)
+
+
+@router.patch("/v1/me", response_model=ProfileOut)
+def update_me(
+    body: ProfileUpdateIn,
+    user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ProfileOut:
+    profile = db.get(Profile, user.id)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    if body.display_name is None and body.phone is None:
+        raise HTTPException(status_code=400, detail="No profile fields to update")
+    if body.display_name is not None:
+        profile.display_name = body.display_name.strip()
+    if body.phone is not None:
+        profile.phone = body.phone.strip() or None
+    profile.updated_at = utcnow()
+    write_audit(
+        db,
+        action="profile.updated",
+        entity_type="profile",
+        entity_id=str(profile.id),
+        actor_user_id=user.id,
+    )
+    db.commit()
+    db.refresh(profile)
+    return _profile_out(profile)
 
 
 @router.get("/v1/me/memberships", response_model=list[MembershipOut])
@@ -85,7 +115,7 @@ def request_membership(
             raise HTTPException(status_code=409, detail="Already a member")
         if existing.status == "pending":
             return membership_to_out(existing, org)
-        # rejected/revoked → re-request as pending member
+        # rejected, suspended, or revoked → re-request as a pending member
         existing.status = "pending"
         existing.role = "member"
         existing.requested_at = utcnow()
@@ -161,17 +191,26 @@ def decide_membership(
     if membership is None or membership.organization_id != org.id:
         raise HTTPException(status_code=404, detail="Membership not found")
 
-    # Prevent self-approval / self-privilege changes
+    # Prevent self-approval / self-privilege changes, including suspend and role grants.
     if membership.user_id == user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot approve or reject your own membership",
         )
+    if body.role is not None and body.decision != "approved":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Role can only be set when approving a membership",
+        )
 
     membership.status = body.decision
-    if body.decision == "approved" and body.role is not None:
-        membership.role = body.role
-    elif body.decision == "approved" and membership.role not in {"member", "admin"}:
+    if body.decision == "approved":
+        if body.role is not None:
+            membership.role = body.role
+        elif membership.role not in {"member", "admin"}:
+            membership.role = "member"
+    else:
+        # Rejection and suspension drop elevated roles so status checks cannot be skipped.
         membership.role = "member"
     membership.decided_at = utcnow()
     membership.decided_by = user.id
