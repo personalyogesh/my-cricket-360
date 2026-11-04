@@ -29,6 +29,21 @@ final class AppSession: ObservableObject {
         memberships.filter { $0.status == .approved }.compactMap { $0.club }
     }
 
+    func signInWithSupabase(email: String, password: String) async {
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            let session = try await SupabaseAuthClient.signIn(email: email, password: password)
+            accessToken = session.access_token
+            AuthTokenStore.save(session.access_token)
+            isSignedIn = true
+            await refreshProfile()
+            statusMessage = "Signed in via Supabase (\(SupabaseConfig.projectName))"
+        } catch {
+            statusMessage = error.localizedDescription
+        }
+    }
+
     func signInWithDevAccount(email: String = "player@example.com", displayName: String = "Demo Player") async {
         isLoading = true
         defer { isLoading = false }

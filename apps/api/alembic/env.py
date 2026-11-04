@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from logging.config import fileConfig
 from pathlib import Path
@@ -26,7 +27,19 @@ def get_url() -> str:
     return get_settings().database_url
 
 
+def _guard_production_migrate() -> None:
+    """Refuse accidental production migrations unless explicitly allowed."""
+    settings = get_settings()
+    allow = os.getenv("MC360_ALLOW_PROD_MIGRATE", "").lower() in {"1", "true", "yes"}
+    if settings.env == "production" and not allow:
+        raise RuntimeError(
+            "Refusing Alembic against MC360_ENV=production without "
+            "MC360_ALLOW_PROD_MIGRATE=true (explicit approval required)."
+        )
+
+
 def run_migrations_offline() -> None:
+    _guard_production_migrate()
     url = get_url()
     context.configure(
         url=url,
@@ -40,6 +53,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    _guard_production_migrate()
     configuration = config.get_section(config.config_ini_section) or {}
     configuration["sqlalchemy.url"] = get_url()
     connectable = engine_from_config(

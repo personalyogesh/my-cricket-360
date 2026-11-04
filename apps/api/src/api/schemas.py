@@ -13,6 +13,12 @@ class HealthResponse(BaseModel):
     version: str
     auth_mode: str | None = None
     storage_backend: str | None = None
+    supabase_configured: bool | None = None
+    supabase_host: str | None = None
+    supabase_project_name: str | None = None
+    database_driver: str | None = None
+    # Never include credentials; name hint only (verify in Supabase Settings → Database)
+    database_name_hint: str | None = None
 
 
 class SponsorPublic(BaseModel):

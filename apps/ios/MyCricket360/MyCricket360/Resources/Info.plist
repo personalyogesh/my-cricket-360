@@ -6,5 +6,13 @@
 	<string>My Cricket 360</string>
 	<key>UILaunchScreen</key>
 	<dict/>
+	<key>MC360APIBaseURL</key>
+	<string>http://127.0.0.1:8400</string>
+	<!-- Publishable Supabase settings for project mycricket360 (org: personalyogesh).
+	     Fill via xcconfig locally; never put service_role or DB passwords here. -->
+	<key>SUPABASE_URL</key>
+	<string>$(SUPABASE_URL)</string>
+	<key>SUPABASE_ANON_KEY</key>
+	<string>$(SUPABASE_ANON_KEY)</string>
 </dict>
 </plist>

@@ -130,10 +130,13 @@ Hostname is a **web concern**. Clients call `/v1/orgs/{slug}/...`; the API verif
 
 ## 5. Data & Supabase
 
-- Single PostgreSQL project (new Supabase project; do not touch Firebase).
-- Row Level Security (RLS) as defense in depth; API service role used carefully; prefer user-scoped keys where possible.
-- Storage buckets: `sponsor-assets`, `club-media` — paths prefixed by `organization_id`.
-- Auth: email magic link / OAuth as configured; same users for web admin and iOS.
+- Single existing Supabase project: **`mycricket360`** (org **`personalyogesh`**). Do not create another; do not touch Firebase.
+- Project name ≠ Postgres database name — verify DB name under Settings → Database (often `postgres`).
+- Publishable anon key only in Next.js (`NEXT_PUBLIC_*`) and iOS Info.plist/xcconfig.
+- `service_role` and `MC360_DATABASE_URL` stay on the FastAPI server.
+- Storage bucket: `sponsor-assets` — paths prefixed by `organization_id`.
+- Auth: Supabase JWT via JWKS; local HS256 only when Supabase is not configured.
+- See [config/SUPABASE.md](./config/SUPABASE.md).
 
 See [DATA_MODEL.md](./DATA_MODEL.md).
 

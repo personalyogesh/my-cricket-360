@@ -16,6 +16,8 @@ struct RootView: View {
 
 struct WelcomeView: View {
     @EnvironmentObject private var session: AppSession
+    @State private var email = ""
+    @State private var password = ""
 
     var body: some View {
         NavigationStack {
@@ -24,13 +26,35 @@ struct WelcomeView: View {
                     .font(.largeTitle.bold())
                 Text("One account for Starks Cricket and CGI Steelers Cricket. Request membership to either or both clubs; each club’s admins approve independently.")
                     .foregroundStyle(.secondary)
-                Button {
-                    Task { await session.signInWithDevAccount() }
-                } label: {
-                    Text(session.isLoading ? "Signing in…" : "Continue with demo account")
+
+                if SupabaseConfig.isConfigured {
+                    TextField("Email", text: $email)
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.emailAddress)
+                    SecureField("Password", text: $password)
+                    Button {
+                        Task { await session.signInWithSupabase(email: email, password: password) }
+                    } label: {
+                        Text(session.isLoading ? "Signing in…" : "Sign in with Supabase")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(session.isLoading || email.isEmpty || password.isEmpty)
+                    Text("Using publishable config for project \(SupabaseConfig.projectName).")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Button {
+                        Task { await session.signInWithDevAccount() }
+                    } label: {
+                        Text(session.isLoading ? "Signing in…" : "Continue with local demo token")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(session.isLoading)
+                    Text("Supabase URL/anon key not set in Info.plist — local API dev tokens only.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(session.isLoading)
+
                 if let statusMessage = session.statusMessage {
                     Text(statusMessage)
                         .font(.footnote)

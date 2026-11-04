@@ -7,6 +7,12 @@ One native app for all clubs. Global user account, membership requests per club,
 - macOS with Xcode 15+
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`)
 - API running at `http://127.0.0.1:8400` (or set `MC360APIBaseURL` in Info.plist)
+- Optional: Supabase publishable URL + anon key for project **mycricket360** (org `personalyogesh`)
+
+```bash
+cp Config/Debug.xcconfig.example Config/Debug.xcconfig
+# Fill SUPABASE_URL and SUPABASE_ANON_KEY only — never service_role or DB password
+```
 
 ## Generate & run
 

@@ -25,6 +25,9 @@ targets:
       properties:
         CFBundleDisplayName: My Cricket 360
         UILaunchScreen: {}
+        MC360APIBaseURL: $(MC360APIBaseURL)
+        SUPABASE_URL: $(SUPABASE_URL)
+        SUPABASE_ANON_KEY: $(SUPABASE_ANON_KEY)
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft

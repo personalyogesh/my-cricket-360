@@ -1,0 +1,8 @@
+// Copy to Debug.xcconfig (gitignored) — publishable values only
+// Supabase project: mycricket360 (org: personalyogesh)
+
+SUPABASE_URL = https:/$()/YOUR_PROJECT_REF.supabase.co
+SUPABASE_ANON_KEY = YOUR_SUPABASE_ANON_PUBLIC_KEY
+MC360APIBaseURL = http:/$()/127.0.0.1:8400
+
+// Do not add SUPABASE_SERVICE_ROLE_KEY or database passwords to iOS configs.

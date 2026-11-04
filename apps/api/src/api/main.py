@@ -48,12 +48,18 @@ app.include_router(auth_dev.router)
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     s = get_settings()
+    driver = "sqlite" if s.database_url.startswith("sqlite") else "postgres"
     return HealthResponse(
         status="ok",
         service="my-cricket-360-api",
         version=__version__,
         auth_mode=s.effective_auth_mode,
         storage_backend=s.effective_storage_backend,
+        supabase_configured=s.supabase_configured,
+        supabase_host=s.supabase_host,
+        supabase_project_name=s.supabase_project_name,
+        database_driver=driver,
+        database_name_hint=s.database_name_hint,
     )
 
 

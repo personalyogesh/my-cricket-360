@@ -113,22 +113,31 @@ npm run lint -w @my-cricket-360/web
 cd apps/api && uv run pytest && uv run ruff check src tests
 ```
 
-## Supabase configuration (required for real auth/storage)
+## Supabase configuration (existing project)
 
-Create a **new** Supabase project (do not touch Firebase).
+**Reuse** Supabase project **`mycricket360`** in organization **`personalyogesh`**. Do not create another project. Do not touch Firebase.
 
-| Setting | Value |
+Full notes: [config/SUPABASE.md](./config/SUPABASE.md) · env templates: [config/environments/](./config/environments/)
+
+| Setting | Where |
 |---------|--------|
-| `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL` | Project URL |
-| `SUPABASE_ANON_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role (API only; never expose to browsers) |
-| `SUPABASE_JWT_AUDIENCE` | `authenticated` |
+| Project URL | Settings → API → `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL` / iOS `SUPABASE_URL` |
+| anon **publishable** key | Settings → API → public clients + API anon |
+| service_role **secret** | API only (`SUPABASE_SERVICE_ROLE_KEY`) — never `NEXT_PUBLIC_*`, never iOS |
+| Postgres DB name | Settings → Database (**not** the project label `mycricket360`; often `postgres`) |
+| `MC360_DATABASE_URL` | API server only |
 | JWKS | `{SUPABASE_URL}/auth/v1/.well-known/jwks.json` |
-| Storage bucket | `sponsor-assets` (public read for published logos optional) |
-| `MC360_AUTH_MODE` | `supabase` in staging/production |
-| `MC360_DATABASE_URL` | Supabase Postgres connection string |
+| Storage bucket | `sponsor-assets` |
 
-Without these, the API runs in **dev auth** (HS256) + **local disk storage** for uploads.
+```bash
+# After filling .env from the dashboard (never commit it):
+python scripts/check_supabase_config.py
+# Migrate non-production only, then seed:
+cd apps/api && uv run alembic upgrade head && uv run python -m api.seed
+# Production migrations require explicit approval + MC360_ALLOW_PROD_MIGRATE=true
+```
+
+Without credentials, the API runs **dev auth** (HS256) + **local disk storage**.
 
 ## Safety
 
