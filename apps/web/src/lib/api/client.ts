@@ -94,6 +94,17 @@ export function fetchPublicSponsors(slug: string) {
   return apiFetch<ApiSponsor[]>(`/v1/orgs/${slug}/sponsors`);
 }
 
+export type ApiTeam = {
+  id: string;
+  name: string;
+  division: string | null;
+  season: string | null;
+};
+
+export function fetchPublicTeams(slug: string) {
+  return apiFetch<ApiTeam[]>(`/v1/orgs/${slug}/teams`);
+}
+
 export function fetchPublicSponsor(slug: string, sponsorSlug: string) {
   return apiFetch<ApiSponsor>(`/v1/orgs/${slug}/sponsors/${sponsorSlug}`);
 }

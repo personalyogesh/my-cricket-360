@@ -1419,6 +1419,33 @@
             "type": "string",
             "title": "Organization Name"
           },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
           "role": {
             "type": "string",
             "title": "Role"
@@ -1451,6 +1478,7 @@
           "organization_id",
           "organization_slug",
           "organization_name",
+          "user_id",
           "role",
           "status",
           "requested_at"

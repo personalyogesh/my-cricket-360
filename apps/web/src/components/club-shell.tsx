@@ -33,6 +33,9 @@ export function ClubShell({ club, children }: ClubShellProps) {
             <Link href="/sponsors" className="hover:text-white">
               Sponsors
             </Link>
+            <Link href="/join" className="hover:text-white">
+              Join
+            </Link>
             <Link href="/admin" className="rounded bg-white/15 px-2 py-1 hover:bg-white/25">
               Admin
             </Link>

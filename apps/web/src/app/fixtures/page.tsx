@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ClubShell } from "@/components/club-shell";
+import { clubPageMetadata } from "@/lib/clubs/metadata";
 import { getResolvedHost } from "@/lib/clubs/server";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return clubPageMetadata("/fixtures", "Fixtures", "Public match schedule for this club.");
+}
 
 export default async function FixturesPage() {
   const resolved = await getResolvedHost();

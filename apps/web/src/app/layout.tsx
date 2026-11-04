@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Source_Sans_3 } from "next/font/google";
+import { AuthSessionSync } from "@/components/auth-session-sync";
 import "./globals.css";
 
 const display = Fraunces({
@@ -33,6 +34,7 @@ export default function RootLayout({
       <body
         className={`${display.variable} ${sans.variable} font-sans-body antialiased`}
       >
+        <AuthSessionSync />
         {children}
       </body>
     </html>

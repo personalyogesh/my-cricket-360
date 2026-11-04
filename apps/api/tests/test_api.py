@@ -35,6 +35,13 @@ def test_dev_token_endpoint(client) -> None:
     assert me.status_code == 200
     assert me.json()["user"]["email"] == "dev@example.com"
 
+    again = client.post(
+        "/v1/auth/dev-token",
+        json={"email": "dev@example.com", "display_name": "Dev"},
+    )
+    assert again.status_code == 200
+    assert again.json()["user"]["id"] == me.json()["user"]["id"]
+
 
 def test_public_teams_are_club_scoped(client, db, starks, steelers) -> None:
     db.add(Team(organization_id=starks.id, name="Starks First XI", division="Premier", is_public=True))

@@ -76,6 +76,9 @@ class MembershipOut(BaseModel):
     organization_id: uuid.UUID
     organization_slug: str
     organization_name: str
+    user_id: uuid.UUID
+    email: str | None = None
+    display_name: str | None = None
     role: str
     status: str
     requested_at: datetime
