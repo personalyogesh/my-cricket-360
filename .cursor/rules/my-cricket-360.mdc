@@ -22,6 +22,13 @@ Multi-club cricket platform: one Next.js web app, one FastAPI API, one SwiftUI i
 6. Prefer **sponsor** vertical and founding-club readiness when prioritizing work.
 7. **Do not mark features complete without verification** (tests or documented manual proof).
 
+## Delivery
+
+GitHub `https://github.com/personalyogesh/my-cricket-360.git` (remote `github`) is the source for approval and builds. Push completed work there and to `origin`. Open a pull request into `main`. Do not push feature work straight to `main`.
+
+- **Web:** Vercel builds the single Next.js app with Root Directory `apps/web`. Pull requests get preview deployments. Production updates only after `main` changes. Do not attach `starksgroup.org` or `cgisteelerscricket.org`, and do not change DNS, without explicit approval.
+- **iOS:** The SwiftUI app is not built by Vercel. It ships from this same GitHub repo with Xcode on macOS. Do not claim an iOS build succeeded unless Xcode compiled it.
+
 ## Layout
 
 - `apps/web` — Next.js App Router, TypeScript, Tailwind
