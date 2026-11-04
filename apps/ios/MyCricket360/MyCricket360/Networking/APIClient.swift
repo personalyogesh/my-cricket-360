@@ -99,4 +99,8 @@ actor APIClient {
     func publicSponsors(slug: String) async throws -> [SponsorDTO] {
         try await request("GET", path: "/v1/orgs/\(slug)/sponsors")
     }
+
+    func publicTeams(slug: String) async throws -> [TeamDTO] {
+        try await request("GET", path: "/v1/orgs/\(slug)/teams")
+    }
 }

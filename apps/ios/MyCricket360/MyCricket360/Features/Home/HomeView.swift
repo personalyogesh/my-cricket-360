@@ -13,6 +13,18 @@ struct HomeView: View {
                         Text("Domain \(club.primaryDomain)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                        GroupBox("Teams") {
+                            if session.teams.isEmpty {
+                                Text("No public teams yet.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                ForEach(session.teams) { team in
+                                    Text(team.name)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
+                        }
                         GroupBox("Published sponsors") {
                             if session.sponsors.isEmpty {
                                 Text("None published yet (founding sponsors remain draft until verified).")
@@ -58,4 +70,9 @@ struct HomeView: View {
             .refreshable { await session.refreshProfile() }
         }
     }
+}
+
+#Preview("Starks home") {
+    HomeView()
+        .environmentObject(AppSession.preview(club: .starks))
 }

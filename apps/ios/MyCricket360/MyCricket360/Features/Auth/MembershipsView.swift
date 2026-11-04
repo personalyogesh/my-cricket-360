@@ -6,24 +6,33 @@ struct MembershipsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Your memberships") {
-                    if session.memberships.isEmpty {
-                        Text("No memberships yet. Request access below.")
+                Section("Approved clubs") {
+                    if session.approvedClubs.isEmpty {
+                        Text("No approved clubs yet.")
                     }
-                    ForEach(session.memberships) { membership in
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(membership.club.displayName)
-                                Text("\(membership.status.rawValue.capitalized) · \(membership.role)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if membership.status == .approved {
-                                Image(systemName: "checkmark.seal.fill")
-                                    .foregroundStyle(.green)
-                            }
-                        }
+                    ForEach(session.memberships.filter { $0.status == .approved }) { membership in
+                        membershipRow(membership)
+                    }
+                }
+
+                Section("Pending requests") {
+                    if session.pendingMemberships.isEmpty {
+                        Text("No pending requests.")
+                    }
+                    ForEach(session.pendingMemberships) { membership in
+                        membershipRow(membership)
+                    }
+                }
+
+                Section("Other") {
+                    let others = session.memberships.filter {
+                        $0.status != .approved && $0.status != .pending
+                    }
+                    if others.isEmpty {
+                        Text("No rejected or suspended memberships.")
+                    }
+                    ForEach(others) { membership in
+                        membershipRow(membership)
                     }
                 }
 
@@ -48,4 +57,34 @@ struct MembershipsView: View {
             .refreshable { await session.refreshProfile() }
         }
     }
+
+    private func membershipRow(_ membership: ClubMembership) -> some View {
+        HStack {
+            VStack(alignment: .leading) {
+                Text(membership.club.displayName)
+                Text("\(membership.status.rawValue.capitalized) · \(membership.role)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            if membership.status == .approved {
+                Image(systemName: "checkmark.seal.fill")
+                    .foregroundStyle(.green)
+            } else if membership.status == .pending {
+                Image(systemName: "clock")
+                    .foregroundStyle(.orange)
+            }
+        }
+    }
+}
+
+#Preview("Pending and approved") {
+    MembershipsView()
+        .environmentObject(AppSession.preview(
+            club: .starks,
+            memberships: [
+                ClubMembership(club: .starks, status: .approved, role: "member"),
+                ClubMembership(club: .steelers, status: .pending, role: "member")
+            ]
+        ))
 }

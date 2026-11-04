@@ -44,17 +44,27 @@ enum ClubSecureStore {
 }
 
 enum AuthTokenStore {
-    private static let key = "mc360.accessToken"
+    private static let accessKey = "mc360.accessToken"
+    private static let refreshKey = "mc360.refreshToken"
 
     static func save(_ token: String) {
-        ClubSecureStore.set(token, forKey: key)
+        ClubSecureStore.set(token, forKey: accessKey)
     }
 
     static func load() -> String? {
-        ClubSecureStore.string(forKey: key)
+        ClubSecureStore.string(forKey: accessKey)
+    }
+
+    static func saveRefresh(_ token: String) {
+        ClubSecureStore.set(token, forKey: refreshKey)
+    }
+
+    static func loadRefresh() -> String? {
+        ClubSecureStore.string(forKey: refreshKey)
     }
 
     static func clear() {
-        ClubSecureStore.remove(key)
+        ClubSecureStore.remove(accessKey)
+        ClubSecureStore.remove(refreshKey)
     }
 }

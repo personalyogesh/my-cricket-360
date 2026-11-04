@@ -47,6 +47,7 @@ enum MembershipStatus: String, Codable {
     case pending
     case approved
     case rejected
+    case suspended
     case revoked
 }
 

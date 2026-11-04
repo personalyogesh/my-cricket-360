@@ -39,6 +39,18 @@ struct WelcomeView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(session.isLoading || email.isEmpty || password.isEmpty)
+                    Button {
+                        Task {
+                            await session.signUpWithSupabase(
+                                email: email,
+                                password: password,
+                                displayName: email
+                            )
+                        }
+                    } label: {
+                        Text("Create account")
+                    }
+                    .disabled(session.isLoading || email.isEmpty || password.isEmpty)
                     Text("Using publishable config for project \(SupabaseConfig.projectName).")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -73,6 +85,8 @@ struct MainTabView: View {
         TabView {
             HomeView()
                 .tabItem { Label("Home", systemImage: "house.fill") }
+            TeamsView()
+                .tabItem { Label("Teams", systemImage: "person.3.sequence") }
             SponsorsView()
                 .tabItem { Label("Sponsors", systemImage: "star.circle.fill") }
             MembershipsView()
