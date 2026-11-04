@@ -51,9 +51,12 @@ class Settings(BaseSettings):
     )
 
     # Supabase Auth / JWT / Storage (server)
+    # Keys: prefer new publishable/secret; legacy anon/service_role still accepted.
     supabase_url: str = Field(default="", alias="SUPABASE_URL")
     supabase_anon_key: str = Field(default="", alias="SUPABASE_ANON_KEY")
+    supabase_publishable_key: str = Field(default="", alias="SUPABASE_PUBLISHABLE_KEY")
     supabase_service_role_key: str = Field(default="", alias="SUPABASE_SERVICE_ROLE_KEY")
+    supabase_secret_key: str = Field(default="", alias="SUPABASE_SECRET_KEY")
     supabase_jwt_audience: str = Field(default="authenticated", alias="SUPABASE_JWT_AUDIENCE")
     supabase_jwt_issuer: str = Field(default="", alias="SUPABASE_JWT_ISSUER")
     supabase_jwks_url: str = Field(default="", alias="SUPABASE_JWKS_URL")
@@ -81,16 +84,29 @@ class Settings(BaseSettings):
         return value.strip()
 
     @model_validator(mode="after")
-    def _reject_service_role_in_anon_slot(self) -> Settings:
-        # If someone pasted service_role into ANON by mistake, fail fast in non-dev.
-        anon = self.supabase_anon_key
-        service = self.supabase_service_role_key
-        if anon and service and anon == service:
+    def _reject_secret_in_publishable_slot(self) -> Settings:
+        publishable = self.publishable_key
+        secret = self.secret_key
+        if publishable and secret and publishable == secret:
             raise ValueError(
-                "SUPABASE_ANON_KEY must not equal SUPABASE_SERVICE_ROLE_KEY "
-                "(publishable vs server secret)."
+                "Publishable/anon key must not equal secret/service_role key."
+            )
+        if publishable.startswith("sb_secret_") or "service_role" in publishable.lower():
+            raise ValueError(
+                "Publishable/anon slot contains a server secret key. "
+                "Use sb_publishable_… or legacy anon in SUPABASE_PUBLISHABLE_KEY / SUPABASE_ANON_KEY."
             )
         return self
+
+    @property
+    def publishable_key(self) -> str:
+        """Client-safe key: new publishable preferred, else legacy anon."""
+        return (self.supabase_publishable_key or self.supabase_anon_key).strip()
+
+    @property
+    def secret_key(self) -> str:
+        """Server-only key: new secret preferred, else legacy service_role."""
+        return (self.supabase_secret_key or self.supabase_service_role_key).strip()
 
     @property
     def cors_origin_list(self) -> list[str]:
@@ -138,13 +154,13 @@ class Settings(BaseSettings):
     def effective_storage_backend(self) -> str:
         if self.storage_backend != "auto":
             return self.storage_backend
-        if self.supabase_url and self.supabase_service_role_key:
+        if self.supabase_url and self.secret_key:
             return "supabase"
         return "local"
 
     @property
     def supabase_configured(self) -> bool:
-        return bool(self.supabase_url and self.supabase_anon_key)
+        return bool(self.supabase_url and self.publishable_key)
 
 
 @lru_cache

@@ -8,63 +8,105 @@
 | **Project name** | `mycricket360` |
 | Purpose | Auth, Postgres, Storage for My Cricket 360 |
 
-Reuse this project for local (when pointed at it), staging, and production configurations. **Do not create another Supabase project** for this application.
+Reuse this project. **Do not create another Supabase project.** Do not modify Firebase.
 
 ## Project name ≠ PostgreSQL database name
 
-Supabase **project name** (`mycricket360`) is a dashboard label.
+`mycricket360` is a **dashboard project label**.
 
-The **Postgres database name** is shown under:
+The **Postgres database name** is under:
 
-**Project Settings → Database → Connection string / Database settings**
+**Project Settings → Database** (connection string / database name)
 
-On most Supabase projects the database name is `postgres`, but **verify it in the dashboard** before writing `MC360_DATABASE_URL`. Never assume the database name equals `mycricket360`.
+Often it is `postgres`. **Always verify** before setting `MC360_DATABASE_URL`. Never assume the DB name equals `mycricket360`.
 
-Connection URL shape (password and host from Settings → Database):
+### Recommended API connection
 
-```text
-postgresql+psycopg://postgres.<PROJECT_REF>:<DB_PASSWORD>@aws-0-<REGION>.pooler.supabase.com:6543/<DB_NAME>
-```
-
-or the direct connection host also shown in the same settings page. Use the **pooler** URL for the API in most cases.
-
-## Project URL / ref
-
-**Project Settings → API**:
-
-- Project URL → `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL` / iOS `SUPABASE_URL`
-- `anon` `public` key → publishable only (`SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, iOS `SUPABASE_ANON_KEY`)
-- `service_role` `secret` → **API server only** (`SUPABASE_SERVICE_ROLE_KEY`) — never Next.js `NEXT_PUBLIC_*`, never iOS Info.plist
-
-JWKS (no secret required to fetch public keys):
+Prefer the **connection pooler** URI from Settings → Database (Transaction mode for serverless/API). Rewrite the scheme for SQLAlchemy/psycopg:
 
 ```text
-{SUPABASE_URL}/auth/v1/.well-known/jwks.json
+postgresql+psycopg://…@…pooler.supabase.com:6543/<VERIFIED_DB_NAME>
 ```
 
-Issuer expected by the API:
+Direct `db.<ref>.supabase.co:5432` also works for long-lived local processes.
 
-```text
-{SUPABASE_URL}/auth/v1
-```
+## API keys: new vs legacy
 
-Audience: `authenticated`
+Supabase now ships **publishable** / **secret** keys and still supports legacy **anon** / **service_role** JWTs (deprecated by end of 2026). Both work with `@supabase/supabase-js` **v2.118.x** installed in `apps/web`.
+
+| Privilege | New (preferred) | Legacy | Where it goes |
+|-----------|-----------------|--------|----------------|
+| Low (public) | `sb_publishable_…` | `anon` JWT (`eyJ…`) | Web `NEXT_PUBLIC_*`, iOS xcconfig, API publishable slot |
+| Elevated (server) | `sb_secret_…` | `service_role` JWT | **API only** |
+
+Dashboard: **Project Settings → API Keys** (Publishable and secret tab; legacy keys may appear under a Legacy tab).
+
+This repo accepts either naming in env:
+
+| Role | Preferred env | Legacy env alias |
+|------|---------------|------------------|
+| Public | `SUPABASE_PUBLISHABLE_KEY` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `SUPABASE_ANON_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+| Server | `SUPABASE_SECRET_KEY` | `SUPABASE_SERVICE_ROLE_KEY` |
+
+## Per-app environment variables
+
+### FastAPI (`apps/api`) — server only
+
+| Variable | Required for Supabase mode | Notes |
+|----------|----------------------------|-------|
+| `SUPABASE_URL` | yes | Project URL |
+| `SUPABASE_PUBLISHABLE_KEY` or `SUPABASE_ANON_KEY` | yes | For config completeness / future client-style calls |
+| `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` | yes (storage) | Storage uploads; never expose |
+| `MC360_DATABASE_URL` | yes (real DB) | Postgres URL with **verified** DB name |
+| `SUPABASE_JWT_AUDIENCE` | default `authenticated` | User JWT `aud` |
+| `SUPABASE_JWT_ISSUER` | optional | Defaults to `{URL}/auth/v1` |
+| `SUPABASE_JWKS_URL` | optional | Defaults to `{URL}/auth/v1/.well-known/jwks.json` |
+| `SUPABASE_STORAGE_BUCKET` | default `sponsor-assets` | |
+| `MC360_AUTH_MODE` | `auto` or `supabase` | |
+| `MC360_ENV` | `local` / `staging` / `production` | Production migrations gated |
+
+User access tokens are validated via **JWKS** (not by embedding the secret key in JWT checks).
+
+### Next.js (`apps/web`) — publishable only
+
+| Variable | Required | Notes |
+|----------|----------|-------|
+| `NEXT_PUBLIC_SUPABASE_URL` | yes | |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | |
+| `NEXT_PUBLIC_API_BASE_URL` | yes | FastAPI base |
+
+**Forbidden in web:** any `NEXT_PUBLIC_*` secret/service_role, `MC360_DATABASE_URL`, DB passwords.
+
+### SwiftUI (`apps/ios`) — publishable only via gitignored xcconfig
+
+| Info.plist / xcconfig key | Required | Notes |
+|---------------------------|----------|-------|
+| `SUPABASE_URL` | yes | |
+| `SUPABASE_PUBLISHABLE_KEY` or `SUPABASE_ANON_KEY` | yes | |
+| `MC360APIBaseURL` | yes | API base |
+
+**Forbidden on device:** secret/service_role, database URL/password.
+
+Tracked `Info.plist` only contains `$(VAR)` placeholders. Real values live in `apps/ios/Config/*.xcconfig` (**gitignored**).
+
+## JWT / Auth wiring
+
+1. Web/iOS sign in with Supabase Auth using the **publishable** key.
+2. Clients send `Authorization: Bearer <user access_token>` to FastAPI.
+3. FastAPI verifies the user JWT with JWKS (`iss` + `aud=authenticated`).
 
 ## Storage
 
-Create (or reuse) a private/public bucket named `sponsor-assets` (override with `SUPABASE_STORAGE_BUCKET`). Object paths must stay org-scoped: `{organization_id}/{sponsor_id}/...`.
+Create bucket `sponsor-assets` (or set `SUPABASE_STORAGE_BUCKET`). Paths: `{organization_id}/{sponsor_id}/...`. Uploads use the **server secret** key from FastAPI only.
 
 ## Migrations
 
-Alembic lives in `apps/api/alembic`. Founding seeds are idempotent (`uv run python -m api.seed`).
+Alembic: `apps/api/alembic`. Seeds: `uv run python -m api.seed` (idempotent Starks/Steelers).
 
-**Do not run `alembic upgrade` against production without explicit approval.**
+**Do not run against production without approval.** `MC360_ENV=production` requires `MC360_ALLOW_PROD_MIGRATE=true`.
 
-## Key placement
+## Validate (no secret printing)
 
-| Secret / value | API | Next.js | iOS |
-|----------------|-----|---------|-----|
-| Project URL | yes | `NEXT_PUBLIC_` only | Info.plist / xcconfig |
-| anon / publishable key | yes | `NEXT_PUBLIC_` only | Info.plist / xcconfig |
-| service_role | **yes only** | never | never |
-| DB password / `MC360_DATABASE_URL` | **yes only** | never | never |
+```bash
+cd apps/api && uv run python ../../scripts/check_supabase_config.py
+```

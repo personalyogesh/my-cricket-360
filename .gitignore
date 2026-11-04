@@ -29,6 +29,11 @@ apps/web/.env.local
 apps/web/.env.*.local
 apps/ios/Config/*.xcconfig
 !apps/ios/Config/*.xcconfig.example
+# Xcode generated / user-specific (never commit filled secrets via build products)
+apps/ios/**/xcuserdata/
+apps/ios/**/*.xcuserstate
+apps/ios/build/
+apps/ios/DerivedData/
 !.env.example
 !.env.staging.example
 !.env.production.example

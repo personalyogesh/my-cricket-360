@@ -81,7 +81,7 @@ class StorageService:
         return storage_path
 
     async def _put_supabase(self, storage_path: str, data: bytes, content_type: str) -> str:
-        if not self.settings.supabase_url or not self.settings.supabase_service_role_key:
+        if not self.settings.supabase_url or not self.settings.secret_key:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Supabase Storage is not configured",
@@ -91,7 +91,8 @@ class StorageService:
             f"{self.settings.supabase_url.rstrip('/')}/storage/v1/object/{bucket}/{storage_path}"
         )
         headers = {
-            "Authorization": f"Bearer {self.settings.supabase_service_role_key}",
+            "Authorization": f"Bearer {self.settings.secret_key}",
+            "apikey": self.settings.secret_key,
             "Content-Type": content_type,
             "x-upsert": "true",
         }
