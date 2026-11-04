@@ -143,7 +143,7 @@ Without credentials, the API runs **dev auth** (HS256) + **local disk storage**.
 
 Source of truth: [github.com/personalyogesh/my-cricket-360](https://github.com/personalyogesh/my-cricket-360).
 
-- Land work on a branch and open a pull request into `main`. GitHub Actions (web lint, test, build, and API tests) must pass. `main` does not take direct feature pushes.
+- Land work on a branch and open a pull request into `main`. `main` rejects direct pushes and force-pushes. GitHub Actions runs web lint, test, and build, plus the API tests. Confirm that run is green before merging.
 - Vercel builds **only** the Next.js app. Import this repository and set **Root Directory** to `apps/web` (`apps/web/vercel.json`). Pull requests get preview deployments. A production deployment runs only after the pull request is merged to `main`.
 - Do not attach `starksgroup.org` or `cgisteelerscricket.org` until a DNS cutover is explicitly approved. Set `NEXT_PUBLIC_*` values from `apps/web/.env.local.example` in the Vercel project. Never put the Supabase secret key or database URL on the web project.
 - The SwiftUI app in `apps/ios` is built with Xcode on macOS from this same repository. Vercel does not compile it.
