@@ -1,11 +1,12 @@
 # My Cricket 360 — iOS (SwiftUI)
 
-One native app for all clubs. Global user account, membership requests per club, club switcher for approved memberships, last club persisted in Keychain.
+One native app for all clubs. Global user account, membership requests per club, club switcher for approved memberships, last club + access token in Keychain.
 
 ## Requirements
 
 - macOS with Xcode 15+
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`) recommended
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`)
+- API running at `http://127.0.0.1:8400` (or set `MC360APIBaseURL` in Info.plist)
 
 ## Generate & run
 
@@ -17,15 +18,15 @@ open MyCricket360.xcodeproj
 
 Select an iOS Simulator, then Run.
 
-### Demo flow
+> **Note:** This repository’s Linux agents do **not** compile the iOS target. Do not treat the shell as “build verified” until Xcode succeeds on macOS.
 
-1. Tap **Continue with demo account**.
-2. Starks is approved; Steelers is pending — switcher only lists approved clubs.
-3. Request Steelers/Starks from the **Clubs** tab (idempotent while pending/approved).
-4. Last selected club is stored in the Keychain (`org.mycricket360.app`).
+## Demo flow (dev auth)
 
-## Notes
+1. Tap **Continue with demo account** → `POST /v1/auth/dev-token`.
+2. Request Starks and/or Steelers membership from **Clubs**.
+3. Promote/approve via API admin tools; approved clubs appear in the switcher.
+4. **Sponsors** lists **published** sponsors only for the selected club.
 
-- UI gating is advisory; production data access must be authorized by the FastAPI backend.
-- This Linux CI environment cannot compile SwiftUI; verify builds on macOS.
-- Do not point production DNS or Firebase at this app without approval.
+## Networking
+
+Typed DTOs in `Networking/APIModels.swift` aligned with `packages/openapi/openapi.json`.

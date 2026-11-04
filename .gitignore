@@ -46,3 +46,9 @@ coverage/
 # Misc
 tmp-web-scaffold/
 *.pem
+
+# Local API data
+apps/api/mc360-local.db
+apps/api/mc360-local.db-*
+apps/api/.local-storage/
+**/mc360-local.db

@@ -4,51 +4,54 @@ info:
   version: 0.1.0
   description: >
     Organization-scoped cricket management API.
-    Founding clubs: Starks Cricket, CGI Steelers Cricket.
+    The full generated contract lives in openapi.json (exported from FastAPI).
 servers:
   - url: http://127.0.0.1:8400
     description: Local
 paths:
   /health:
     get:
-      operationId: health
       summary: Health check
       responses:
         "200":
           description: OK
   /v1/orgs:
     get:
-      operationId: listOrganizations
-      summary: List founding organizations
+      summary: List organizations
       responses:
         "200":
-          description: Organization list
-  /v1/orgs/{slug}:
+          description: OK
+  /v1/me:
     get:
-      operationId: getOrganization
-      summary: Get organization by slug
+      summary: Current user profile and memberships
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+  /v1/orgs/{slug}/sponsors:
+    get:
+      summary: Public published sponsors for a club
       parameters:
         - name: slug
           in: path
           required: true
           schema:
             type: string
-            enum: [starks, steelers]
       responses:
         "200":
-          description: Organization
-        "404":
-          description: Not found
-  /v1/resolve-host:
+          description: OK
+  /v1/orgs/{slug}/admin/sponsors:
     get:
-      operationId: resolveHost
-      summary: Resolve allowlisted hostname to organization
+      summary: Admin sponsor list (club admin only)
       parameters:
-        - name: host
-          in: query
+        - name: slug
+          in: path
           required: true
           schema:
             type: string
       responses:
         "200":
-          description: Resolution result (club | platform | unknown)
+          description: OK
+        "403":
+          description: Forbidden

@@ -13,21 +13,35 @@ struct HomeView: View {
                         Text("Domain \(club.primaryDomain)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
-                        GroupBox("Founding sponsor") {
-                            Text(club.foundingSponsorName)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                        GroupBox("Published sponsors") {
+                            if session.sponsors.isEmpty {
+                                Text("None published yet (founding sponsors remain draft until verified).")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                ForEach(session.sponsors) { sponsor in
+                                    Text(sponsor.name)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
                         }
-                        GroupBox("Next steps") {
-                            Text("Fixtures, teams, finances, and content load from the org-scoped API. Authorization is enforced server-side for organization \(club.organizationId).")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
+                        GroupBox("Account") {
+                            Text(session.displayName)
+                            if let email = session.email {
+                                Text(email).font(.footnote).foregroundStyle(.secondary)
+                            }
                         }
                     } else {
                         ContentUnavailableView(
                             "Choose a club",
                             systemImage: "sportscourt",
-                            description: Text("Approve a membership, then use the club switcher.")
+                            description: Text("Request and receive approval, then use the club switcher.")
                         )
+                    }
+                    if let statusMessage = session.statusMessage {
+                        Text(statusMessage)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .padding()
@@ -41,6 +55,7 @@ struct HomeView: View {
                     Button("Sign out") { session.signOut() }
                 }
             }
+            .refreshable { await session.refreshProfile() }
         }
     }
 }

@@ -3,7 +3,7 @@
 Native iOS + web multi-club cricket management platform.
 
 **Founding clubs:** Starks Cricket (`starksgroup.org`) · CGI Steelers Cricket (`cgisteelerscricket.org`)  
-**Initial sponsors:** Hashtag India Cary · CGI
+**Initial sponsors (seeded as draft):** Hashtag India Cary · CGI
 
 One monorepo · one Next.js app · one FastAPI API · one SwiftUI app · one PostgreSQL (Supabase).
 
@@ -17,11 +17,12 @@ One monorepo · one Next.js app · one FastAPI API · one SwiftUI app · one Pos
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | System design |
 | [DATA_MODEL.md](./DATA_MODEL.md) | PostgreSQL schema |
 | [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) | Phased delivery |
+| [packages/openapi/openapi.json](./packages/openapi/openapi.json) | Generated OpenAPI |
 
 ## Repository layout
 
 ```
-apps/web     Next.js App Router (hostname → club branding)
+apps/web     Next.js App Router (hostname → club branding + admin)
 apps/api     FastAPI + SQLAlchemy 2 + Alembic
 apps/ios     SwiftUI My Cricket 360
 packages/openapi
@@ -31,8 +32,8 @@ packages/openapi
 
 - Node.js 20+
 - Python 3.12+ and [uv](https://docs.astral.sh/uv/)
-- Docker (optional local Postgres on port **5433**)
-- macOS + Xcode 15+ for iOS
+- Docker (optional Postgres on port **5433**)
+- macOS + Xcode 15+ for iOS (`xcodegen`)
 
 ## Local development
 
@@ -44,19 +45,19 @@ npm install
 cd apps/api && uv sync --all-extras && cd ../..
 ```
 
-### 2. Web (port 43123)
+### 2. Database
+
+**SQLite (default local):** created automatically on API startup (`mc360-local.db`) with idempotent founding seeds.
+
+**Postgres (recommended when Docker works):**
 
 ```bash
-npm run dev:web
+docker compose up -d db
+# set MC360_DATABASE_URL=postgresql+psycopg://mc360:mc360@127.0.0.1:5433/mc360
+cd apps/api
+uv run alembic upgrade head
+uv run python -m api.seed
 ```
-
-| URL | What you see |
-|-----|----------------|
-| [http://localhost:43123](http://localhost:43123) | Platform chooser |
-| [http://starks.localhost:43123](http://starks.localhost:43123) | Starks Cricket + Hashtag India Cary |
-| [http://steelers.localhost:43123](http://steelers.localhost:43123) | CGI Steelers + CGI |
-
-Modern browsers resolve `*.localhost` to loopback. Club resolution uses a **server-side hostname allowlist** (apex + www + local). Unknown hosts never map to another club.
 
 ### 3. API (port 8400)
 
@@ -68,45 +69,69 @@ uv run uvicorn api.main:app --host 0.0.0.0 --port 8400 --reload
 - Health: http://127.0.0.1:8400/health  
 - Swagger: http://127.0.0.1:8400/docs  
 
-Optional DB:
+Promote a local admin (after first login/dev-token creates the profile, or with a fresh email):
 
 ```bash
-docker compose up -d db
+cd apps/api
+uv run python scripts/promote_admin.py --email admin@starks.local --org starks
 ```
 
-### 4. iOS
+### 4. Web (port 43123)
+
+```bash
+npm run dev:web
+```
+
+| URL | What you see |
+|-----|----------------|
+| [http://localhost:43123](http://localhost:43123) | Platform chooser |
+| [http://starks.localhost:43123](http://starks.localhost:43123) | Starks Cricket |
+| [http://steelers.localhost:43123](http://steelers.localhost:43123) | CGI Steelers |
+| `/admin/login` on a club host | Admin login (Supabase or local dev token) |
+| `/admin/sponsors` | Club-scoped sponsor management |
+
+Public sponsor pages only show **published** sponsors. Founding seeds remain **draft** until an admin verifies and publishes them (no fabricated logos).
+
+### 5. iOS
 
 ```bash
 cd apps/ios
-xcodegen generate   # brew install xcodegen
+xcodegen generate
 open MyCricket360.xcodeproj
 ```
 
-See [apps/ios/README.md](./apps/ios/README.md).
+The shell talks to `http://127.0.0.1:8400` (Keychain token + membership requests + published sponsors). **No iOS compile was run in Linux CI** — verify on macOS/Xcode.
 
 ## Tests
 
 ```bash
-# Web — hostname allowlist / club resolution
+# Web — hostname allowlist
 npm run test:web
+npm run lint -w @my-cricket-360/web
 
-# API
-cd apps/api && uv run pytest
+# API — seeds, authz, sponsors
+cd apps/api && uv run pytest && uv run ruff check src tests
 ```
 
-## Environments
+## Supabase configuration (required for real auth/storage)
 
-| Env | Config samples |
-|-----|----------------|
-| local | `.env.example` |
-| staging | `.env.staging.example` |
-| production | `.env.production.example` (gated) |
+Create a **new** Supabase project (do not touch Firebase).
 
-CI runs on GitHub Actions (`.github/workflows/ci.yml`). Production deploy and DNS cutover require explicit approval.
+| Setting | Value |
+|---------|--------|
+| `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL` | Project URL |
+| `SUPABASE_ANON_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role (API only; never expose to browsers) |
+| `SUPABASE_JWT_AUDIENCE` | `authenticated` |
+| JWKS | `{SUPABASE_URL}/auth/v1/.well-known/jwks.json` |
+| Storage bucket | `sponsor-assets` (public read for published logos optional) |
+| `MC360_AUTH_MODE` | `supabase` in staging/production |
+| `MC360_DATABASE_URL` | Supabase Postgres connection string |
+
+Without these, the API runs in **dev auth** (HS256) + **local disk storage** for uploads.
 
 ## Safety
 
-- No unvalidated `Host` header for security decisions.
-- Organization-scoped RBAC; no cross-club private data.
-- Sponsor uploads/approval and analytics are first-class (seeded founding sponsors).
-- Billing / third-party club onboarding designed but not activated.
+- Hostname allowlist only for web club resolution.
+- Organization-scoped RBAC; Steelers admins cannot mutate Starks sponsors (and vice versa).
+- No secrets in git; no DNS/production deploy without approval.

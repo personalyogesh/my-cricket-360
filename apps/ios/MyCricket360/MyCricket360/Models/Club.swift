@@ -51,7 +51,8 @@ enum MembershipStatus: String, Codable {
 }
 
 struct ClubMembership: Identifiable, Codable, Equatable {
-    var id: String { "\(club.rawValue)-\(status.rawValue)" }
+    var id: String { "\(club.rawValue)-\(status.rawValue)-\(role)" }
     let club: ClubSlug
     var status: MembershipStatus
+    var role: String = "member"
 }

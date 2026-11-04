@@ -24,10 +24,18 @@ struct WelcomeView: View {
                     .font(.largeTitle.bold())
                 Text("One account for Starks Cricket and CGI Steelers Cricket. Request membership to either or both clubs; each club’s admins approve independently.")
                     .foregroundStyle(.secondary)
-                Button("Continue with demo account") {
-                    session.signInDemo()
+                Button {
+                    Task { await session.signInWithDevAccount() }
+                } label: {
+                    Text(session.isLoading ? "Signing in…" : "Continue with demo account")
                 }
                 .buttonStyle(.borderedProminent)
+                .disabled(session.isLoading)
+                if let statusMessage = session.statusMessage {
+                    Text(statusMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
             }
             .padding()
@@ -37,8 +45,6 @@ struct WelcomeView: View {
 }
 
 struct MainTabView: View {
-    @EnvironmentObject private var session: AppSession
-
     var body: some View {
         TabView {
             HomeView()
@@ -47,11 +53,6 @@ struct MainTabView: View {
                 .tabItem { Label("Sponsors", systemImage: "star.circle.fill") }
             MembershipsView()
                 .tabItem { Label("Clubs", systemImage: "person.3.fill") }
-        }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                ClubSwitcher()
-            }
         }
     }
 }

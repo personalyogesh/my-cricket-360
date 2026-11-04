@@ -19,15 +19,17 @@ Sponsor readiness and founding clubs (Starks, CGI Steelers) are prioritized in e
 
 ---
 
-## Phase 1 — API + schema bootstrap
+## Phase 1 — Persistence, auth, sponsors (in progress / landed in repo)
 
-1. Alembic migrations for `organizations`, `organization_domains`, `profiles`, `memberships`, sponsor tables.
-2. Seed Starks + Steelers + Hashtag India Cary + CGI.
-3. FastAPI health + `/v1/orgs/{slug}` public read.
-4. OpenAPI export to `packages/openapi`.
-5. Pytest against local Postgres / SQLite test harness.
+1. Alembic migrations for organizations, domains, profiles, memberships, teams, sponsors, assets, campaigns, audit_logs.
+2. Idempotent seeds: Starks + Steelers + draft founding sponsors (no fabricated logos).
+3. Supabase JWT validation (JWKS) + local dev tokens; membership request/approve with self-approval blocked.
+4. Club-scoped sponsor admin CRUD, uploads, approve/publish + audit logs; cross-club authz tests.
+5. Web public sponsors + admin login/management wired to API.
+6. iOS API client, Keychain token, memberships, published sponsors (Xcode compile pending on macOS).
+7. OpenAPI export to `packages/openapi/openapi.json`.
 
-**Exit:** API returns org theme for both founding slugs; migrations clean.
+**Exit:** API tests green; web lint/tests green; Supabase credentials remain the external blocker for non-dev auth/storage.
 
 ---
 

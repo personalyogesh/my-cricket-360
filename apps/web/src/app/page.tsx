@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ClubShell } from "@/components/club-shell";
 import { SponsorStrip } from "@/components/sponsor-strip";
+import { fetchPublicSponsors } from "@/lib/api/client";
 import { CLUBS, canonicalOrigin } from "@/lib/clubs";
 import { getResolvedHost } from "@/lib/clubs/server";
 
@@ -43,6 +44,14 @@ export default async function HomePage() {
 
   if (resolved.kind === "club") {
     const { club } = resolved;
+    let publishedSponsors: Awaited<ReturnType<typeof fetchPublicSponsors>> = [];
+    try {
+      publishedSponsors = await fetchPublicSponsors(club.slug);
+    } catch {
+      publishedSponsors = [];
+    }
+    const featured = publishedSponsors[0];
+
     return (
       <ClubShell club={club}>
         <section className="mx-auto max-w-5xl px-4 pb-10 pt-14">
@@ -70,7 +79,17 @@ export default async function HomePage() {
             </Link>
           </div>
         </section>
-        <SponsorStrip sponsor={club.initialSponsor} clubName={club.name} />
+        {featured ? (
+          <SponsorStrip
+            sponsor={{
+              slug: featured.slug,
+              name: featured.name,
+              tagline: featured.tagline || "",
+              websiteUrl: featured.website_url || "#",
+            }}
+            clubName={club.name}
+          />
+        ) : null}
         <section className="mx-auto grid max-w-5xl gap-6 px-4 py-12 sm:grid-cols-3">
           {[
             {

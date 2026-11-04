@@ -1,7 +1,7 @@
 import Foundation
 import Security
 
-/// Minimal Keychain wrapper for persisting last selected club securely.
+/// Keychain wrapper for auth token and last selected club.
 enum ClubSecureStore {
     private static let service = "org.mycricket360.app"
 
@@ -40,5 +40,21 @@ enum ClubSecureStore {
             kSecAttrAccount as String: key,
         ]
         SecItemDelete(query as CFDictionary)
+    }
+}
+
+enum AuthTokenStore {
+    private static let key = "mc360.accessToken"
+
+    static func save(_ token: String) {
+        ClubSecureStore.set(token, forKey: key)
+    }
+
+    static func load() -> String? {
+        ClubSecureStore.string(forKey: key)
+    }
+
+    static func clear() {
+        ClubSecureStore.remove(key)
     }
 }

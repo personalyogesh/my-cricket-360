@@ -8,14 +8,22 @@ struct SponsorsView: View {
             List {
                 if let club = session.selectedClub {
                     Section(club.shortName) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(club.foundingSponsorName)
-                                .font(.headline)
-                            Text("Visible on iOS and \(club.primaryDomain) after admin approval.")
-                                .font(.footnote)
+                        if session.sponsors.isEmpty {
+                            Text("No published sponsors yet for this club.")
                                 .foregroundStyle(.secondary)
                         }
-                        .padding(.vertical, 4)
+                        ForEach(session.sponsors) { sponsor in
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(sponsor.name)
+                                    .font(.headline)
+                                if let tagline = sponsor.tagline {
+                                    Text(tagline)
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
                     }
                 } else {
                     Text("Select an approved club to view its sponsors.")
@@ -27,6 +35,7 @@ struct SponsorsView: View {
                     ClubSwitcher()
                 }
             }
+            .refreshable { await session.loadSponsors() }
         }
     }
 }

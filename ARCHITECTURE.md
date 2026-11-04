@@ -110,12 +110,21 @@ Security rules:
 ### AuthZ pattern
 
 ```
-Request → JWT verify → load memberships →
+Request → JWT verify (Supabase JWKS or local HS256) →
+  ensure profile → load memberships →
   require org_id in memberships with required role →
   query always filtered by org_id
 ```
 
-Hostname is a **web concern**. Mobile sends `X-Organization-Id` or path `/v1/orgs/{slug}/...`; the API still verifies membership.
+Self-approval of memberships is rejected. Sponsor mutations require **approved org admin** for that organization only.
+
+Hostname is a **web concern**. Clients call `/v1/orgs/{slug}/...`; the API verifies membership independently of Host headers.
+
+### Storage
+
+- Supabase Storage bucket `sponsor-assets` when credentials exist.
+- Local disk fallback under `MC360_LOCAL_STORAGE_DIR` served at `/v1/media/...`.
+- Paths: `{organization_id}/{sponsor_id}/{asset_id}.ext` — never cross-org.
 
 ---
 

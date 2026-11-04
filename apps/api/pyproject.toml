@@ -14,17 +14,21 @@ dependencies = [
     "alembic>=1.14.0",
     "pydantic>=2.10.0",
     "pydantic-settings>=2.6.0",
+    "pyjwt[crypto]>=2.10.0",
+    "httpx>=0.28.0",
+    "python-multipart>=0.0.17",
+    "psycopg[binary]>=3.2.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.3.0",
-    "httpx>=0.28.0",
     "ruff>=0.8.0",
 ]
 
 [project.scripts]
 mc360-api = "api.main:run"
+mc360-seed = "api.seed:main"
 
 [build-system]
 requires = ["uv_build>=0.13.7,<0.14.0"]
@@ -32,8 +36,16 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.ruff.lint]
+ignore = [
+  "B008",  # FastAPI Depends() in defaults is idiomatic
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["E402"]
