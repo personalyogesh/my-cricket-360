@@ -14,7 +14,8 @@ import {
   type ApiSchedule,
 } from "@/lib/api/client";
 import { readAccessToken } from "@/lib/auth/session";
-import { localDateTimeToIso } from "@/lib/fixtures/time";
+import { buildFixtureWriteBody, type FixtureTimeBaseline } from "@/lib/fixtures/form";
+import { isoToLocalDateTime } from "@/lib/fixtures/time";
 
 const STATUSES = ["draft", "scheduled", "postponed", "cancelled", "live", "completed"] as const;
 
@@ -49,6 +50,7 @@ export function AdminFixturesPanel({ clubSlug, clubName }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
+  const [baseline, setBaseline] = useState<FixtureTimeBaseline | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [scheduleName, setScheduleName] = useState("");
   const [scheduleSeason, setScheduleSeason] = useState("2026");
@@ -75,23 +77,12 @@ export function AdminFixturesPanel({ clubSlug, clubName }: Props) {
   }
 
   function payload() {
-    const builtin = formats.find((item) => item.code === form.format_code);
-    const body: Record<string, unknown> = {
-      season: form.season,
-      competition: form.competition,
-      home_team_name: form.home_team_name,
-      away_team_name: form.away_team_name,
-      venue: form.venue,
-      timezone: form.timezone,
-      format_code: form.format_code,
-      status: form.status,
-      result_summary: form.result_summary.trim() ? form.result_summary.trim() : null,
-      schedule_id: form.schedule_id || null,
-    };
-    if (!builtin) body.format_name = form.format_name;
-    if (form.overs.trim()) body.overs = Number(form.overs);
-    if (form.starts_local) body.starts_at = localDateTimeToIso(form.starts_local, form.timezone);
-    return body;
+    return buildFixtureWriteBody({
+      editing: Boolean(editing),
+      form,
+      formats,
+      baseline,
+    });
   }
 
   async function saveFixture(event: React.FormEvent) {
@@ -110,6 +101,7 @@ export function AdminFixturesPanel({ clubSlug, clubName }: Props) {
         await createFixture(clubSlug, token, payload());
       }
       setEditing(null);
+      setBaseline(null);
       setForm(emptyForm);
       await load();
     } catch (err) {
@@ -342,7 +334,20 @@ export function AdminFixturesPanel({ clubSlug, clubName }: Props) {
               type="button"
               className="mt-2 underline"
               onClick={() => {
+                let local: string;
+                try {
+                  local = isoToLocalDateTime(fixture.starts_at, fixture.timezone);
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Could not read this start time");
+                  return;
+                }
                 setEditing(fixture.id);
+                setBaseline({
+                  local,
+                  timezone: fixture.timezone,
+                  startsAt: fixture.starts_at,
+                  scheduleId: fixture.schedule_id ?? "",
+                });
                 setForm({
                   ...emptyForm,
                   season: fixture.season,
@@ -357,7 +362,7 @@ export function AdminFixturesPanel({ clubSlug, clubName }: Props) {
                   status: fixture.status,
                   result_summary: fixture.result_summary ?? "",
                   schedule_id: fixture.schedule_id ?? "",
-                  starts_local: "",
+                  starts_local: local,
                 });
               }}
             >

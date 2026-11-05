@@ -20,9 +20,16 @@ cp Config/Debug.xcconfig.example Config/Debug.xcconfig
 cd apps/ios
 xcodegen generate
 open MyCricket360.xcodeproj
+xcodebuild \
+  -project MyCricket360.xcodeproj \
+  -scheme MyCricket360 \
+  -destination 'generic/platform=iOS Simulator' \
+  -configuration Debug \
+  CODE_SIGNING_ALLOWED=NO \
+  build
 ```
 
-Select an iOS Simulator, then Run.
+Select an iOS Simulator, then Run. `generic/platform=iOS Simulator` compiles without a named device. A named destination such as `platform=iOS Simulator,name=iPhone 16` also works when that simulator is installed.
 
 > **Note:** This repository’s Linux agents do **not** compile the iOS target. Do not treat the shell as “build verified” until Xcode succeeds on macOS.
 
