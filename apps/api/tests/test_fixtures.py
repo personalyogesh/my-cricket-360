@@ -100,6 +100,39 @@ def test_admin_crud_hides_drafts_and_does_not_invent_results(client, db: Session
     assert {row.action for row in audit} >= {"fixture.created", "fixture.updated"}
 
 
+def test_patch_without_start_time_keeps_the_original_instant(client, db: Session, starks) -> None:
+    _, token = make_user(db, email="keep-time@example.com", org=starks, role="admin")
+    headers = auth_header(token)
+    created = client.post(
+        "/v1/orgs/starks/admin/fixtures",
+        headers=headers,
+        json=_payload(starts_at="2026-11-01T06:30:00Z", timezone="America/New_York"),
+    )
+    assert created.status_code == 201, created.text
+    original = created.json()["starts_at"]
+    fixture_id = created.json()["id"]
+
+    patched = client.patch(
+        f"/v1/orgs/starks/admin/fixtures/{fixture_id}",
+        headers=headers,
+        json={"result_summary": "Recorded by the club", "venue": "Starks Ground"},
+    )
+    assert patched.status_code == 200
+    assert patched.json()["starts_at"] == original
+    assert patched.json()["timezone"] == "America/New_York"
+    assert patched.json()["result_summary"] == "Recorded by the club"
+
+    moved = client.patch(
+        f"/v1/orgs/starks/admin/fixtures/{fixture_id}",
+        headers=headers,
+        json={"starts_at": "2026-06-14T18:00:00Z", "timezone": "America/New_York"},
+    )
+    assert moved.status_code == 200
+    assert moved.json()["starts_at"] != original
+    assert moved.json()["starts_at"].startswith("2026-06-14T18:00:00")
+    assert moved.json()["starts_at"].endswith("+00:00") or moved.json()["starts_at"].endswith("Z")
+
+
 def test_cross_club_admin_cannot_mutate_or_list(client, db: Session, starks, steelers) -> None:
     _, steelers_admin = make_user(db, email="steel-admin@example.com", org=steelers, role="admin")
     _, member = make_user(db, email="member@example.com", org=starks, role="member")

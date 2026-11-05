@@ -127,6 +127,13 @@ def _schedule_admin(row: Schedule) -> ScheduleAdminOut:
     return ScheduleAdminOut(**base.model_dump(), organization_id=row.organization_id)
 
 
+def _as_utc(value: datetime) -> datetime:
+    """SQLite drops tzinfo; stored fixture instants are UTC either way."""
+    if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
 def _fixture_public(row: Fixture) -> FixturePublic:
     return FixturePublic(
         id=row.id,
@@ -138,7 +145,7 @@ def _fixture_public(row: Fixture) -> FixturePublic:
         home_team_name=row.home_team_name,
         away_team_name=row.away_team_name,
         venue=row.venue,
-        starts_at=row.starts_at,
+        starts_at=_as_utc(row.starts_at),
         timezone=row.timezone,
         format_code=row.format_code,
         format_name=row.format_name,
