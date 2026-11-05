@@ -17,6 +17,16 @@ ALLOWED_CONTENT_TYPES = {
 }
 
 
+def _signature_matches(data: bytes, content_type: str) -> bool:
+    if content_type == "image/png":
+        return data.startswith(b"\x89PNG\r\n\x1a\n")
+    if content_type == "image/jpeg":
+        return data.startswith(b"\xff\xd8\xff")
+    if content_type == "image/webp":
+        return len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP"
+    return False
+
+
 async def read_validated_image(file: UploadFile, settings: Settings | None = None) -> tuple[bytes, str, str]:
     settings = settings or get_settings()
     content_type = (file.content_type or "").lower()
@@ -28,6 +38,11 @@ async def read_validated_image(file: UploadFile, settings: Settings | None = Non
     data = await file.read()
     if not data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty upload")
+    if not _signature_matches(data, content_type):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File contents do not match the declared image type",
+        )
     if len(data) > settings.max_upload_bytes:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

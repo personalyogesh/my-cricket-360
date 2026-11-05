@@ -127,3 +127,44 @@ def test_publish_requires_approval(client, db: Session, starks) -> None:
         headers=auth_header(admin),
     )
     assert res.status_code == 400
+
+
+def test_upload_rejects_mismatched_signature(client, db: Session, starks) -> None:
+    _, admin = make_user(db, email="badfile@example.com", org=starks, role="admin")
+    res = client.post(
+        "/v1/orgs/starks/admin/sponsors/hashtag-india-cary/assets",
+        headers=auth_header(admin),
+        data={"asset_type": "logo"},
+        files={"file": ("logo.png", io.BytesIO(b"not-a-png"), "image/png")},
+    )
+    assert res.status_code == 400
+    assert "do not match" in res.json()["detail"]
+
+
+def test_archive_hides_sponsor_and_cross_club_cannot_archive(
+    client, db: Session, starks, steelers
+) -> None:
+    _, starks_admin = make_user(db, email="archiver@example.com", org=starks, role="admin")
+    _, steelers_admin = make_user(db, email="other-archiver@example.com", org=steelers, role="admin")
+    headers = auth_header(starks_admin)
+    client.post("/v1/orgs/starks/admin/sponsors/hashtag-india-cary/approve", headers=headers)
+    client.post("/v1/orgs/starks/admin/sponsors/hashtag-india-cary/publish", headers=headers)
+    listed = client.get("/v1/orgs")
+    starks_body = next(o for o in listed.json() if o["slug"] == "starks")
+    assert starks_body["initial_sponsor"]["slug"] == "hashtag-india-cary"
+
+    denied = client.delete(
+        "/v1/orgs/starks/admin/sponsors/hashtag-india-cary",
+        headers=auth_header(steelers_admin),
+    )
+    assert denied.status_code == 403
+
+    archived = client.delete(
+        "/v1/orgs/starks/admin/sponsors/hashtag-india-cary",
+        headers=headers,
+    )
+    assert archived.status_code == 200
+    assert archived.json()["status"] == "archived"
+    assert client.get("/v1/orgs/starks/sponsors/hashtag-india-cary").status_code == 404
+    hidden = next(o for o in client.get("/v1/orgs").json() if o["slug"] == "starks")
+    assert hidden["initial_sponsor"] is None

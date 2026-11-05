@@ -79,11 +79,15 @@ def org_to_public(
 
 
 def membership_to_out(membership: Membership, org: Organization) -> MembershipOut:
+    profile = membership.user
     return MembershipOut(
         id=membership.id,
         organization_id=membership.organization_id,
         organization_slug=org.slug,
         organization_name=org.name,
+        user_id=membership.user_id,
+        email=profile.email if profile is not None else None,
+        display_name=profile.display_name if profile is not None else None,
         role=membership.role,
         status=membership.status,
         requested_at=membership.requested_at,

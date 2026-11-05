@@ -1,30 +1,27 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import { resolveClubFromHost } from "@/lib/clubs";
+import { updateSession } from "@/utils/supabase/middleware";
 
 /**
- * Attach resolved club context headers for server components.
- * Security: organization identity for data loading still comes from the
- * allowlist lookup in resolveClubFromHost — never from client-supplied query params.
+ * Attach resolved club context, then refresh the Supabase session cookie.
+ * Organization identity still comes only from the hostname allowlist.
  */
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const host = request.headers.get("host");
   const resolved = resolveClubFromHost(host);
 
-  const requestHeaders = new Headers(request.headers);
   const normalized = resolved.hostname || "";
-  requestHeaders.set("x-club-host", normalized);
+  request.headers.set("x-club-host", normalized);
 
   if (resolved.kind === "club") {
-    requestHeaders.set("x-club-slug", resolved.club.slug);
-    requestHeaders.set("x-organization-id", resolved.club.organizationId);
+    request.headers.set("x-club-slug", resolved.club.slug);
+    request.headers.set("x-organization-id", resolved.club.organizationId);
   } else {
-    requestHeaders.delete("x-club-slug");
-    requestHeaders.delete("x-organization-id");
+    request.headers.delete("x-club-slug");
+    request.headers.delete("x-organization-id");
   }
 
-  return NextResponse.next({
-    request: { headers: requestHeaders },
-  });
+  return updateSession(request);
 }
 
 export const config = {

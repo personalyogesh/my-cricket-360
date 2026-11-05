@@ -11,6 +11,10 @@ final class AppSession: ObservableObject {
     @Published var memberships: [ClubMembership] = []
     @Published var selectedClub: ClubSlug?
     @Published var sponsors: [SponsorDTO] = []
+    @Published var teams: [TeamDTO] = []
+    @Published var fixtures: [FixtureDTO] = []
+    @Published var fixturesLoading: Bool = false
+    @Published var fixturesError: String?
     @Published var statusMessage: String?
     @Published var isLoading: Bool = false
 
@@ -29,14 +33,36 @@ final class AppSession: ObservableObject {
         memberships.filter { $0.status == .approved }.compactMap { $0.club }
     }
 
+    var pendingMemberships: [ClubMembership] {
+        memberships.filter { $0.status == .pending }
+    }
+
+    func signUpWithSupabase(email: String, password: String, displayName: String) async {
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            guard let session = try await SupabaseAuthClient.signUp(
+                email: email,
+                password: password,
+                displayName: displayName
+            ) else {
+                statusMessage = "Account created. Confirm the email, then sign in."
+                return
+            }
+            applySupabaseSession(session)
+            await refreshProfile()
+            statusMessage = "Signed up via Supabase (\(SupabaseConfig.projectName))"
+        } catch {
+            statusMessage = error.localizedDescription
+        }
+    }
+
     func signInWithSupabase(email: String, password: String) async {
         isLoading = true
         defer { isLoading = false }
         do {
             let session = try await SupabaseAuthClient.signIn(email: email, password: password)
-            accessToken = session.access_token
-            AuthTokenStore.save(session.access_token)
-            isSignedIn = true
+            applySupabaseSession(session)
             await refreshProfile()
             statusMessage = "Signed in via Supabase (\(SupabaseConfig.projectName))"
         } catch {
@@ -70,15 +96,24 @@ final class AppSession: ObservableObject {
         email = nil
         memberships = []
         sponsors = []
+        teams = []
+        fixtures = []
+        fixturesError = nil
         accessToken = nil
         AuthTokenStore.clear()
     }
 
     func selectClub(_ club: ClubSlug) {
         guard approvedClubs.contains(club) else { return }
+        if selectedClub != club {
+            sponsors = []
+            teams = []
+            fixtures = []
+            fixturesError = nil
+        }
         selectedClub = club
         persistLastClub()
-        Task { await loadSponsors() }
+        Task { await loadClubContent() }
     }
 
     func requestMembership(for club: ClubSlug) async {
@@ -97,7 +132,7 @@ final class AppSession: ObservableObject {
         }
     }
 
-    func refreshProfile() async {
+    func refreshProfile(allowRefresh: Bool = true) async {
         guard let accessToken else { return }
         do {
             let me = try await APIClient.shared.me(token: accessToken)
@@ -111,19 +146,32 @@ final class AppSession: ObservableObject {
                 return ClubMembership(club: club, status: status, role: dto.role)
             }
             if let selectedClub, !approvedClubs.contains(selectedClub) {
+                sponsors = []
+                teams = []
+                fixtures = []
+                fixturesError = nil
                 self.selectedClub = approvedClubs.first
             } else if selectedClub == nil {
                 selectedClub = approvedClubs.first
             }
             persistLastClub()
-            await loadSponsors()
+            await loadClubContent()
         } catch {
             statusMessage = error.localizedDescription
-            // Token may be invalid
             if case APIClientError.http(401, _) = error {
+                if allowRefresh, await refreshSupabaseSession() {
+                    await refreshProfile(allowRefresh: false)
+                    return
+                }
                 signOut()
             }
         }
+    }
+
+    func loadClubContent() async {
+        await loadSponsors()
+        await loadTeams()
+        await loadFixtures()
     }
 
     func loadSponsors() async {
@@ -136,6 +184,61 @@ final class AppSession: ObservableObject {
         } catch {
             sponsors = []
             statusMessage = error.localizedDescription
+        }
+    }
+
+    func loadTeams() async {
+        guard let selectedClub else {
+            teams = []
+            return
+        }
+        do {
+            teams = try await APIClient.shared.publicTeams(slug: selectedClub.rawValue)
+        } catch {
+            teams = []
+            statusMessage = error.localizedDescription
+        }
+    }
+
+    func loadFixtures(formatCode: String? = nil) async {
+        guard let selectedClub else {
+            fixtures = []
+            fixturesError = nil
+            return
+        }
+        fixturesLoading = true
+        fixturesError = nil
+        defer { fixturesLoading = false }
+        do {
+            let page = try await APIClient.shared.publicFixtures(
+                slug: selectedClub.rawValue,
+                when: "upcoming",
+                formatCode: formatCode
+            )
+            fixtures = page.items
+        } catch {
+            fixtures = []
+            fixturesError = error.localizedDescription
+        }
+    }
+
+    private func applySupabaseSession(_ session: SupabaseSessionDTO) {
+        accessToken = session.access_token
+        AuthTokenStore.save(session.access_token)
+        if let refresh = session.refresh_token, !refresh.isEmpty {
+            AuthTokenStore.saveRefresh(refresh)
+        }
+        isSignedIn = true
+    }
+
+    private func refreshSupabaseSession() async -> Bool {
+        guard let refresh = AuthTokenStore.loadRefresh() else { return false }
+        do {
+            let session = try await SupabaseAuthClient.refresh(refreshToken: refresh)
+            applySupabaseSession(session)
+            return true
+        } catch {
+            return false
         }
     }
 
@@ -152,5 +255,31 @@ final class AppSession: ObservableObject {
               let club = ClubSlug(rawValue: raw)
         else { return }
         selectedClub = club
+    }
+}
+
+extension AppSession {
+    /// In-memory session for SwiftUI previews. Xcode compile is still required to render them.
+    static func preview(
+        club: ClubSlug?,
+        memberships: [ClubMembership] = [],
+        sponsors: [SponsorDTO] = [],
+        teams: [TeamDTO] = [],
+        fixtures: [FixtureDTO] = []
+    ) -> AppSession {
+        let session = AppSession()
+        session.isSignedIn = true
+        session.displayName = "Preview Player"
+        session.email = "preview@example.com"
+        if memberships.isEmpty, let club {
+            session.memberships = [ClubMembership(club: club, status: .approved, role: "member")]
+        } else {
+            session.memberships = memberships
+        }
+        session.selectedClub = club
+        session.sponsors = sponsors
+        session.teams = teams
+        session.fixtures = fixtures
+        return session
     }
 }

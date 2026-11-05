@@ -28,5 +28,6 @@ def test_orgs_endpoint_reads_db(client) -> None:
     slugs = {o["slug"] for o in body}
     assert slugs == {"starks", "steelers"}
     starks = next(o for o in body if o["slug"] == "starks")
-    assert starks["initial_sponsor"]["name"] == "Hashtag India Cary"
-    assert starks["initial_sponsor"]["status"] == "draft"
+    # Draft founding sponsors stay off the public org payload.
+    assert starks["initial_sponsor"] is None
+    assert "Hashtag India Cary" not in res.text

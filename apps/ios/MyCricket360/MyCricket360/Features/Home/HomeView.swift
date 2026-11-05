@@ -13,6 +13,34 @@ struct HomeView: View {
                         Text("Domain \(club.primaryDomain)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                        GroupBox("Next fixture") {
+                            if let fixture = session.fixtures.first {
+                                Text("\(fixture.home_team_name) vs \(fixture.away_team_name)")
+                                Text(fixture.format_name)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                if let result = fixture.result_summary {
+                                    Text(result)
+                                        .font(.footnote)
+                                }
+                            } else {
+                                Text("No upcoming fixtures yet.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        GroupBox("Teams") {
+                            if session.teams.isEmpty {
+                                Text("No public teams yet.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                ForEach(session.teams) { team in
+                                    Text(team.name)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
+                        }
                         GroupBox("Published sponsors") {
                             if session.sponsors.isEmpty {
                                 Text("None published yet (founding sponsors remain draft until verified).")
@@ -58,4 +86,9 @@ struct HomeView: View {
             .refreshable { await session.refreshProfile() }
         }
     }
+}
+
+#Preview("Starks home") {
+    HomeView()
+        .environmentObject(AppSession.preview(club: .starks))
 }

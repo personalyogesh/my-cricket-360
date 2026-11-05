@@ -39,3 +39,24 @@ struct SponsorsView: View {
         }
     }
 }
+
+#Preview("Published sponsors") {
+    SponsorsView()
+        .environmentObject(AppSession.preview(
+            club: .steelers,
+            sponsors: [
+                SponsorDTO(
+                    id: UUID(),
+                    slug: "cgi",
+                    name: "CGI",
+                    tagline: "Founding sponsor",
+                    description: nil,
+                    website_url: nil,
+                    logo_url: nil,
+                    banner_url: nil,
+                    status: "published",
+                    sort_order: 0
+                )
+            ]
+        ))
+}

@@ -1,6 +1,16 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ClubShell } from "@/components/club-shell";
+import { clubPageMetadata } from "@/lib/clubs/metadata";
 import { getResolvedHost } from "@/lib/clubs/server";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return clubPageMetadata(
+    "/announcements",
+    "Announcements",
+    "Club news for this hostname only.",
+  );
+}
 
 export default async function AnnouncementsPage() {
   const resolved = await getResolvedHost();

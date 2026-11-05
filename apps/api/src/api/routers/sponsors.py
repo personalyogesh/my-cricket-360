@@ -321,3 +321,32 @@ def unpublish_sponsor(
     db.commit()
     db.refresh(sponsor)
     return sponsor_to_admin(sponsor)
+
+
+@router.delete(
+    "/v1/orgs/{slug}/admin/sponsors/{sponsor_slug}",
+    response_model=SponsorAdminOut,
+)
+def archive_sponsor(
+    slug: str,
+    sponsor_slug: str,
+    user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SponsorAdminOut:
+    """Archive a sponsor so it leaves public listings while the audit trail remains."""
+    org = _get_org(db, slug)
+    require_org_admin(db, user, org.id)
+    sponsor = _get_sponsor_for_org(db, org, sponsor_slug)
+    sponsor.status = "archived"
+    touch(sponsor)
+    write_audit(
+        db,
+        action="sponsor.archived",
+        entity_type="sponsor",
+        entity_id=str(sponsor.id),
+        organization_id=org.id,
+        actor_user_id=user.id,
+    )
+    db.commit()
+    db.refresh(sponsor)
+    return sponsor_to_admin(sponsor)

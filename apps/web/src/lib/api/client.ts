@@ -94,6 +94,17 @@ export function fetchPublicSponsors(slug: string) {
   return apiFetch<ApiSponsor[]>(`/v1/orgs/${slug}/sponsors`);
 }
 
+export type ApiTeam = {
+  id: string;
+  name: string;
+  division: string | null;
+  season: string | null;
+};
+
+export function fetchPublicTeams(slug: string) {
+  return apiFetch<ApiTeam[]>(`/v1/orgs/${slug}/teams`);
+}
+
 export function fetchPublicSponsor(slug: string, sponsorSlug: string) {
   return apiFetch<ApiSponsor>(`/v1/orgs/${slug}/sponsors/${sponsorSlug}`);
 }
@@ -178,6 +189,119 @@ export async function uploadSponsorAsset(
     `/v1/orgs/${slug}/admin/sponsors/${sponsorSlug}/assets`,
     { method: "POST", token, body: form },
   );
+}
+
+export type ApiFixture = {
+  id: string;
+  schedule_id: string | null;
+  season: string;
+  competition: string;
+  home_team_id: string | null;
+  away_team_id: string | null;
+  home_team_name: string;
+  away_team_name: string;
+  venue: string;
+  starts_at: string;
+  timezone: string;
+  format_code: string;
+  format_name: string;
+  overs: number | null;
+  status: string;
+  result_summary: string | null;
+  organization_id?: string;
+};
+
+export type ApiFixturePage = {
+  items: ApiFixture[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type ApiSchedule = {
+  id: string;
+  name: string;
+  season: string;
+  competition: string;
+  format_code: string;
+  format_name: string;
+  overs: number | null;
+  timezone: string;
+  status: string;
+  organization_id?: string;
+};
+
+export type ApiSchedulePage = {
+  items: ApiSchedule[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type ApiFormat = { code: string; name: string; overs: number | null };
+
+export function fetchFixtureFormats() {
+  return apiFetch<ApiFormat[]>("/v1/fixture-formats");
+}
+
+export function fetchPublicFixtures(
+  slug: string,
+  params: Record<string, string | number | undefined> = {},
+) {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== "") query.set(key, String(value));
+  }
+  const suffix = query.size ? `?${query.toString()}` : "";
+  return apiFetch<ApiFixturePage>(`/v1/orgs/${slug}/fixtures${suffix}`);
+}
+
+export function fetchPublicFixture(slug: string, fixtureId: string) {
+  return apiFetch<ApiFixture>(`/v1/orgs/${slug}/fixtures/${fixtureId}`);
+}
+
+export function fetchPublicSchedules(slug: string) {
+  return apiFetch<ApiSchedulePage>(`/v1/orgs/${slug}/schedules?limit=50`);
+}
+
+export function fetchAdminFixtures(slug: string, token: string) {
+  return apiFetch<ApiFixturePage>(`/v1/orgs/${slug}/admin/fixtures?limit=100`, { token });
+}
+
+export function fetchAdminSchedules(slug: string, token: string) {
+  return apiFetch<ApiSchedulePage>(`/v1/orgs/${slug}/admin/schedules?limit=100`, { token });
+}
+
+export function createFixture(slug: string, token: string, body: Record<string, unknown>) {
+  return apiFetch<ApiFixture>(`/v1/orgs/${slug}/admin/fixtures`, {
+    method: "POST",
+    token,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateFixture(
+  slug: string,
+  fixtureId: string,
+  token: string,
+  body: Record<string, unknown>,
+) {
+  return apiFetch<ApiFixture>(`/v1/orgs/${slug}/admin/fixtures/${fixtureId}`, {
+    method: "PATCH",
+    token,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export function createSchedule(slug: string, token: string, body: Record<string, unknown>) {
+  return apiFetch<ApiSchedule>(`/v1/orgs/${slug}/admin/schedules`, {
+    method: "POST",
+    token,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 }
 
 export function issueDevToken(email: string, displayName: string) {

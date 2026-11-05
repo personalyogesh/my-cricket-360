@@ -28,3 +28,11 @@ struct ClubSwitcher: View {
         .accessibilityIdentifier("club-switcher")
     }
 }
+
+#Preview("Switcher") {
+    ClubSwitcher()
+        .environmentObject(AppSession.preview(club: .starks, memberships: [
+            ClubMembership(club: .starks, status: .approved, role: "member"),
+            ClubMembership(club: .steelers, status: .approved, role: "member")
+        ]))
+}

@@ -14,8 +14,7 @@ import {
   uploadSponsorAsset,
   type ApiSponsor,
 } from "@/lib/api/client";
-
-const TOKEN_KEY = "mc360.access_token";
+import { readAccessToken } from "@/lib/auth/session";
 
 type Props = { clubSlug: string; clubName: string };
 
@@ -27,7 +26,7 @@ function mediaUrl(url: string | null | undefined) {
 
 function readStoredToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
+  return readAccessToken(window.localStorage);
 }
 
 export function AdminSponsorsPanel({ clubSlug, clubName }: Props) {

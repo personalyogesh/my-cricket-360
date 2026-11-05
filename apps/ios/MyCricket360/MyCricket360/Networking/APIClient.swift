@@ -99,4 +99,28 @@ actor APIClient {
     func publicSponsors(slug: String) async throws -> [SponsorDTO] {
         try await request("GET", path: "/v1/orgs/\(slug)/sponsors")
     }
+
+    func publicTeams(slug: String) async throws -> [TeamDTO] {
+        try await request("GET", path: "/v1/orgs/\(slug)/teams")
+    }
+
+    func publicFixtures(
+        slug: String,
+        when: String? = "upcoming",
+        formatCode: String? = nil
+    ) async throws -> FixturePageDTO {
+        var parts = ["limit=50"]
+        if let when, !when.isEmpty {
+            parts.append("when=\(when)")
+        }
+        if let formatCode, !formatCode.isEmpty {
+            parts.append("format_code=\(formatCode)")
+        }
+        let query = parts.joined(separator: "&")
+        return try await request("GET", path: "/v1/orgs/\(slug)/fixtures?\(query)")
+    }
+
+    func publicFixture(slug: String, id: UUID) async throws -> FixtureDTO {
+        try await request("GET", path: "/v1/orgs/\(slug)/fixtures/\(id.uuidString)")
+    }
 }
