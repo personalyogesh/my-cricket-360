@@ -162,6 +162,148 @@ class AuditLogOut(BaseModel):
     created_at: datetime
 
 
+FixtureStatus = Literal[
+    "draft",
+    "scheduled",
+    "postponed",
+    "cancelled",
+    "live",
+    "completed",
+]
+ScheduleStatus = Literal["draft", "published"]
+
+
+class FormatSpecOut(BaseModel):
+    code: str
+    name: str
+    overs: int | None = None
+
+
+class ScheduleIn(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    season: str = Field(min_length=1, max_length=64)
+    competition: str = Field(min_length=1, max_length=128)
+    format_code: str = Field(min_length=1, max_length=32)
+    format_name: str | None = Field(default=None, max_length=128)
+    overs: int | None = Field(default=None, ge=1, le=300)
+    timezone: str = Field(min_length=1, max_length=64)
+    status: ScheduleStatus = "draft"
+
+
+class ScheduleUpdateIn(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    season: str | None = Field(default=None, min_length=1, max_length=64)
+    competition: str | None = Field(default=None, min_length=1, max_length=128)
+    format_code: str | None = Field(default=None, min_length=1, max_length=32)
+    format_name: str | None = Field(default=None, max_length=128)
+    overs: int | None = Field(default=None, ge=1, le=300)
+    timezone: str | None = Field(default=None, min_length=1, max_length=64)
+    status: ScheduleStatus | None = None
+
+
+class ScheduleOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    season: str
+    competition: str
+    format_code: str
+    format_name: str
+    overs: int | None
+    timezone: str
+    status: str
+
+
+class ScheduleAdminOut(ScheduleOut):
+    organization_id: uuid.UUID
+
+
+class FixtureIn(BaseModel):
+    schedule_id: uuid.UUID | None = None
+    season: str = Field(min_length=1, max_length=64)
+    competition: str = Field(min_length=1, max_length=128)
+    home_team_id: uuid.UUID | None = None
+    away_team_id: uuid.UUID | None = None
+    home_team_name: str | None = Field(default=None, max_length=255)
+    away_team_name: str | None = Field(default=None, max_length=255)
+    venue: str = Field(min_length=1, max_length=255)
+    starts_at: datetime
+    timezone: str = Field(min_length=1, max_length=64)
+    format_code: str = Field(min_length=1, max_length=32)
+    format_name: str | None = Field(default=None, max_length=128)
+    overs: int | None = Field(default=None, ge=1, le=300)
+    status: FixtureStatus = "draft"
+    result_summary: str | None = Field(default=None, max_length=500)
+
+
+class FixtureUpdateIn(BaseModel):
+    schedule_id: uuid.UUID | None = None
+    season: str | None = Field(default=None, min_length=1, max_length=64)
+    competition: str | None = Field(default=None, min_length=1, max_length=128)
+    home_team_id: uuid.UUID | None = None
+    away_team_id: uuid.UUID | None = None
+    home_team_name: str | None = Field(default=None, max_length=255)
+    away_team_name: str | None = Field(default=None, max_length=255)
+    venue: str | None = Field(default=None, min_length=1, max_length=255)
+    starts_at: datetime | None = None
+    timezone: str | None = Field(default=None, min_length=1, max_length=64)
+    format_code: str | None = Field(default=None, min_length=1, max_length=32)
+    format_name: str | None = Field(default=None, max_length=128)
+    overs: int | None = Field(default=None, ge=1, le=300)
+    status: FixtureStatus | None = None
+    result_summary: str | None = Field(default=None, max_length=500)
+
+
+class FixturePublic(BaseModel):
+    id: uuid.UUID
+    schedule_id: uuid.UUID | None
+    season: str
+    competition: str
+    home_team_id: uuid.UUID | None
+    away_team_id: uuid.UUID | None
+    home_team_name: str
+    away_team_name: str
+    venue: str
+    starts_at: datetime
+    timezone: str
+    format_code: str
+    format_name: str
+    overs: int | None
+    status: str
+    result_summary: str | None
+
+
+class FixtureAdminOut(FixturePublic):
+    organization_id: uuid.UUID
+
+
+class FixturePage(BaseModel):
+    items: list[FixturePublic]
+    total: int
+    limit: int
+    offset: int
+
+
+class FixtureAdminPage(BaseModel):
+    items: list[FixtureAdminOut]
+    total: int
+    limit: int
+    offset: int
+
+
+class SchedulePage(BaseModel):
+    items: list[ScheduleOut]
+    total: int
+    limit: int
+    offset: int
+
+
+class ScheduleAdminPage(BaseModel):
+    items: list[ScheduleAdminOut]
+    total: int
+    limit: int
+    offset: int
+
+
 class DevTokenRequest(BaseModel):
     user_id: uuid.UUID | None = None
     email: str = "dev@example.com"

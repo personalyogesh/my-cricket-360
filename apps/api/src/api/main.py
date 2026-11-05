@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api import __version__
 from api.config import get_settings
-from api.routers import auth_dev, me, media, orgs, sponsors
+from api.routers import auth_dev, fixtures, me, media, orgs, sponsors
 from api.schemas import HealthResponse
 from api.seed import ensure_schema_and_seed
 
@@ -41,6 +41,7 @@ app.add_middleware(
 app.include_router(orgs.router)
 app.include_router(me.router)
 app.include_router(sponsors.router)
+app.include_router(fixtures.router)
 app.include_router(media.router)
 app.include_router(auth_dev.router)
 

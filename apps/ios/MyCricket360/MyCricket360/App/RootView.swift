@@ -85,6 +85,8 @@ struct MainTabView: View {
         TabView {
             HomeView()
                 .tabItem { Label("Home", systemImage: "house.fill") }
+            FixturesView()
+                .tabItem { Label("Fixtures", systemImage: "calendar") }
             TeamsView()
                 .tabItem { Label("Teams", systemImage: "person.3.sequence") }
             SponsorsView()
